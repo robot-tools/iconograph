@@ -11,15 +11,15 @@ import urllib.request
 
 parser = argparse.ArgumentParser(description='iconograph fetcher')
 parser.add_argument(
-	'--base-url',
-	dest='base_url',
-	action='store',
-	required=True)
+    '--base-url',
+    dest='base_url',
+    action='store',
+    required=True)
 parser.add_argument(
-	'--image-type',
-	dest='image_type',
-	action='store',
-	required=True)
+    '--image-type',
+    dest='image_type',
+    action='store',
+    required=True)
 FLAGS = parser.parse_args()
 
 
