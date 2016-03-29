@@ -52,3 +52,4 @@ class Wrapper(object):
 wrapper = Wrapper(FLAGS.key, FLAGS.cert, FLAGS.other_certs)
 wrapped = wrapper.Wrap(sys.stdin.read())
 json.dump(wrapped, sys.stdout, sort_keys=True, indent=4)
+sys.stdout.write('\n')
