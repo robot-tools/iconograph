@@ -20,8 +20,23 @@ parser.add_argument(
     action='store',
     default='http://archive.ubuntu.com/ubuntu')
 parser.add_argument(
+    '--base-url',
+    dest='base_url',
+    action='store',
+    required=True)
+parser.add_argument(
+    '--ca-cert',
+    dest='ca_cert',
+    action='store',
+    required=True)
+parser.add_argument(
     '--dest-iso',
     dest='dest_iso',
+    action='store',
+    required=True)
+parser.add_argument(
+    '--image-type',
+    dest='image_type',
     action='store',
     required=True)
 parser.add_argument(
@@ -74,12 +89,15 @@ class ImageBuilder(object):
     'universe',
   ]
 
-  def __init__(self, source_iso, dest_iso, archive, arch, release):
+  def __init__(self, source_iso, dest_iso, archive, arch, release, ca_cert, base_url, image_type):
     self._source_iso = source_iso
     self._dest_iso = dest_iso
     self._archive = archive
     self._arch = arch
     self._release = release
+    self._ca_cert = ca_cert
+    self._base_url = base_url
+    self._image_type = image_type
 
     self._ico_server_path = os.path.dirname(sys.argv[0])
 
@@ -177,6 +195,25 @@ class ImageBuilder(object):
         'clone',
         'https://github.com/robot-tools/iconograph.git')
 
+    os.mkdir(os.path.join(chroot_path, 'iconograph', 'config'))
+    shutil.copyfile(
+        self._ca_cert,
+        os.path.join(chroot_path, 'iconograph', 'config', 'ca.cert.pem'))
+
+    path = os.path.join(chroot_path, 'iconograph', 'client', 'flags')
+    with open(path, 'w') as fh:
+      fh.write('--image-type=%(image_type)s --base-url=%(base_url)s' % {
+        'image_type': self._image_type,
+        'base_url': self._base_url,
+      })
+
+    self._ExecChroot(
+        chroot_path,
+        'ln',
+        '--symbolic',
+        '/iconograph/client',
+        '/etc/service/iconograph')
+
   def _Squash(self, chroot_path, union_path):
     self._Exec(
         'mksquashfs',
@@ -229,7 +266,10 @@ def main():
       FLAGS.dest_iso,
       FLAGS.archive,
       FLAGS.arch,
-      FLAGS.release)
+      FLAGS.release,
+      FLAGS.ca_cert,
+      FLAGS.base_url,
+      FLAGS.image_type)
   builder.BuildImage()
 
 
