@@ -79,7 +79,12 @@ class ManifestBuilder(object):
     return ret
 
 
-builder = ManifestBuilder(FLAGS.image_dir, FLAGS.image_type, FLAGS.old_manifest)
-manifest = builder.BuildManifest()
-json.dump(manifest, sys.stdout, indent=4)
-sys.stdout.write('\n')
+def main():
+  builder = ManifestBuilder(FLAGS.image_dir, FLAGS.image_type, FLAGS.old_manifest)
+  manifest = builder.BuildManifest()
+  json.dump(manifest, sys.stdout, sort_keys=True, indent=4)
+  sys.stdout.write('\n')
+
+
+if __name__ == '__main__':
+  main()

@@ -86,7 +86,7 @@ class Fetcher(object):
   def _ChooseImage(self, manifest):
     hostname = socket.gethostname()
     hash_base = hashlib.sha256(hostname.encode('ascii'))
-    for image in manifest:
+    for image in manifest['images']:
       hashobj = hash_base.copy()
       hashobj.update(struct.pack('!L', image['timestamp']))
       my_bp = struct.unpack('!I', hashobj.digest()[-4:])[0] % self._MAX_BP
@@ -96,8 +96,12 @@ class Fetcher(object):
   def Fetch(self):
     manifest = self._GetManifest()
     image = self._ChooseImage(manifest)
-    print(image)
 
 
-fetcher = Fetcher(FLAGS.base_url, FLAGS.image_type, FLAGS.ca_cert)
-fetcher.Fetch()
+def main():
+  fetcher = Fetcher(FLAGS.base_url, FLAGS.image_type, FLAGS.ca_cert)
+  fetcher.Fetch()
+
+
+if __name__ == '__main__':
+  main()
