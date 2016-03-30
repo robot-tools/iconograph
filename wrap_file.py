@@ -7,7 +7,7 @@ from OpenSSL import crypto
 import sys
 
 
-parser = argparse.ArgumentParser(description='iconograph wrapfile')
+parser = argparse.ArgumentParser(description='iconograph wrap_file')
 parser.add_argument(
     '--cert',
     dest='cert',
