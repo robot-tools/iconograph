@@ -29,6 +29,12 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
+    '--shell',
+    dest='shell',
+    action='store',
+    type=bool,
+    default=False)
+parser.add_argument(
     '--source-iso',
     dest='source_iso',
     action='store',
@@ -37,6 +43,21 @@ FLAGS = parser.parse_args()
 
 
 class ImageBuilder(object):
+
+  _BASE_PACKAGES = [
+    'debconf',
+    'devscripts',
+    'dialog',
+    'gnupg',
+    'isc-dhcp-client',
+    'locales',
+    'nano',
+    'net-tools',
+    'iputils-ping',
+    'sudo',
+    'user-setup',
+    'wget',
+  ]
 
   def __init__(self, source_iso, dest_iso, archive, arch, release):
     self._source_iso = source_iso
@@ -50,6 +71,9 @@ class ImageBuilder(object):
   def _Exec(self, *args):
     print('+', args)
     subprocess.check_call(args)
+
+  def _ExecChroot(self, chroot_path, *args):
+    self._Exec('chroot', chroot_path, *args)
 
   def _Debootstrap(self, root):
     path = os.path.join(root, 'chroot')
@@ -100,6 +124,18 @@ class ImageBuilder(object):
 
     return union_path
 
+  def _InstallPackages(self, chroot_path):
+    self._ExecChroot(
+        chroot_path,
+        'apt-get',
+        'install',
+        '--assume-yes',
+        *self._BASE_PACKAGES)
+    self._ExecChroot(
+        chroot_path,
+        'apt-get',
+        'clean')
+
   def _Squash(self, chroot_path, union_path):
     self._Exec(
         'mksquashfs',
@@ -122,6 +158,9 @@ class ImageBuilder(object):
 
     chroot_path = self._Debootstrap(root)
     union_path = self._CreateUnion(root)
+    self._InstallPackages(chroot_path)
+    if FLAGS.shell:
+      self._Exec('bash')
     self._Squash(chroot_path, union_path)
     self._CreateISO(union_path)
 
