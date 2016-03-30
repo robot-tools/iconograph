@@ -45,6 +45,7 @@ FLAGS = parser.parse_args()
 class ImageBuilder(object):
 
   _BASE_PACKAGES = [
+    'daemontools-run',
     'debconf',
     'devscripts',
     'dialog',
@@ -60,6 +61,17 @@ class ImageBuilder(object):
     'sudo',
     'user-setup',
     'wget',
+  ]
+
+  _SUITES = [
+    '%(release)s',
+    '%(release)s-updates',
+  ]
+
+  _SECTIONS = [
+    'main',
+    'restricted',
+    'universe',
   ]
 
   def __init__(self, source_iso, dest_iso, archive, arch, release):
@@ -130,7 +142,23 @@ class ImageBuilder(object):
 
     return union_path
 
+  def _FixSourcesList(self, chroot_path):
+    path = os.path.join(chroot_path, 'etc', 'apt', 'sources.list')
+    with open(path, 'w') as fh:
+      for suite in self._SUITES:
+        fh.write('deb %(archive)s %(suite)s %(sections)s\n' % {
+          'archive': self._archive,
+          'suite': suite % {
+            'release': self._release,
+          },
+          'sections': ' '.join(self._SECTIONS),
+        })
+
   def _InstallPackages(self, chroot_path):
+    self._ExecChroot(
+        chroot_path,
+        'apt-get',
+        'update')
     self._ExecChroot(
         chroot_path,
         'apt-get',
@@ -175,6 +203,7 @@ class ImageBuilder(object):
 
     chroot_path = self._Debootstrap(root)
     union_path = self._CreateUnion(root)
+    self._FixSourcesList(chroot_path)
     self._InstallPackages(chroot_path)
     self._InstallIconograph(chroot_path)
     if FLAGS.shell:
