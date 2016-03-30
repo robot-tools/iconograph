@@ -1,12 +1,17 @@
 #!/usr/bin/python3
 
 import argparse
+import codecs
 import json
 import hashlib
-from OpenSSL import crypto
+import os
+import shutil
 import socket
 import struct
+import subprocess
+import tempfile
 import urllib.request
+from OpenSSL import crypto
 
 
 parser = argparse.ArgumentParser(description='iconograph fetcher')
@@ -35,16 +40,43 @@ class Fetcher(object):
   def __init__(self, base_url, image_type, ca_cert):
     self._base_url = base_url
     self._image_type = image_type
-    with open(ca_cert, 'r') as fh:
-      self._ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, fh.read())
+    self._ca_cert_path = ca_cert
+
+  def _VerifyChain(self, untrusted_certs, cert):
+    tempdir = tempfile.mkdtemp()
+
+    try:
+      untrusted_path = os.path.join(tempdir, 'untrusted.pem')
+      with open(untrusted_path, 'w') as fh:
+        for cert_str in untrusted_certs:
+          fh.write(cert_str)
+
+      cert_path = os.path.join(tempdir, 'cert.pem')
+      with open(cert_path, 'w') as fh:
+        fh.write(cert)
+
+      # Rely on pipe buffering to eat the stdout junk
+      subprocess.check_call([
+          'openssl', 'verify',
+          '-CAfile', self._ca_cert_path,
+          '-untrusted', untrusted_path,
+          cert_path,
+      ], stdout=subprocess.PIPE)
+    finally:
+      shutil.rmtree(tempdir)
 
   def _Unwrap(self, wrapped):
+    self._VerifyChain(wrapped.get('other_certs', []), wrapped['cert'])
+
     cert = crypto.load_certificate(crypto.FILETYPE_PEM, wrapped['cert'])
+    sig = codecs.decode(wrapped['sig'], 'hex')
     crypto.verify(
         cert,
-        wrapped['sig'].encode('ascii'),
-        wrapped['inner'].encode('ascii'),
+        sig,
+        wrapped['inner'].encode('utf8'),
         'sha256')
+
+    return json.loads(wrapped['inner'])
 
   def _GetManifest(self):
     url = '%s/%s.manifest.json' % (self._base_url, self._image_type)
@@ -63,8 +95,8 @@ class Fetcher(object):
 
   def Fetch(self):
     manifest = self._GetManifest()
-    #image = self._ChooseImage(manifest)
-    #print(image)
+    image = self._ChooseImage(manifest)
+    print(image)
 
 
 fetcher = Fetcher(FLAGS.base_url, FLAGS.image_type, FLAGS.ca_cert)
