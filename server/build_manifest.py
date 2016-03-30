@@ -11,6 +11,12 @@ import time
 
 parser = argparse.ArgumentParser(description='iconograph fetcher')
 parser.add_argument(
+    '--default-rollout',
+    dest='default_rollout',
+    action='store',
+    type=int,
+    default=0)
+parser.add_argument(
     '--image-dir',
     dest='image_dir',
     action='store',
@@ -64,7 +70,7 @@ class ManifestBuilder(object):
       timestamp = int(match.group('timestamp'))
       image = {
           'timestamp': timestamp,
-          'rollout_‱': rollouts.get(timestamp, 0),
+          'rollout_‱': rollouts.get(timestamp, FLAGS.default_rollout),
       }
       with open(os.path.join(self._image_dir, filename), 'rb') as fh:
         hash_obj = hashlib.sha256()
