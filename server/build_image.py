@@ -4,6 +4,7 @@ import argparse
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 
 
@@ -31,8 +32,7 @@ parser.add_argument(
 parser.add_argument(
     '--shell',
     dest='shell',
-    action='store',
-    type=bool,
+    action='store_true',
     default=False)
 parser.add_argument(
     '--source-iso',
@@ -55,6 +55,7 @@ class ImageBuilder(object):
     'nano',
     'net-tools',
     'iputils-ping',
+    'openssh-server',
     'python3-openssl',
     'sudo',
     'user-setup',
@@ -67,6 +68,9 @@ class ImageBuilder(object):
     self._archive = archive
     self._arch = arch
     self._release = release
+
+    self._ico_server_path = os.path.dirname(sys.argv[0])
+
     self._umount = []
     self._rmtree = []
 
@@ -152,10 +156,14 @@ class ImageBuilder(object):
         os.path.join(union_path, 'casper', 'filesystem.squashfs'),
         '-noappend')
 
+  def _FixGrub(self, union_path):
+    shutil.copyfile(
+        os.path.join(self._ico_server_path, 'iso_files', 'grub.cfg'),
+        os.path.join(union_path, 'boot', 'grub', 'loopback.cfg'))
+
   def _CreateISO(self, union_path):
     self._Exec(
         'grub-mkrescue',
-        '--verbose',
         '--output=%s' % self._dest_iso,
         union_path)
 
@@ -172,6 +180,7 @@ class ImageBuilder(object):
     if FLAGS.shell:
       self._Exec('bash')
     self._Squash(chroot_path, union_path)
+    self._FixGrub(union_path)
     self._CreateISO(union_path)
 
   def BuildImage(self):
