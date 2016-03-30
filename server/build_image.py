@@ -48,12 +48,14 @@ class ImageBuilder(object):
     'debconf',
     'devscripts',
     'dialog',
+    'git',
     'gnupg',
     'isc-dhcp-client',
     'locales',
     'nano',
     'net-tools',
     'iputils-ping',
+    'python3-openssl',
     'sudo',
     'user-setup',
     'wget',
@@ -136,6 +138,13 @@ class ImageBuilder(object):
         'apt-get',
         'clean')
 
+  def _InstallIconograph(self, chroot_path):
+    self._ExecChroot(
+        chroot_path,
+        'git',
+        'clone',
+        'https://github.com/robot-tools/iconograph.git')
+
   def _Squash(self, chroot_path, union_path):
     self._Exec(
         'mksquashfs',
@@ -159,6 +168,7 @@ class ImageBuilder(object):
     chroot_path = self._Debootstrap(root)
     union_path = self._CreateUnion(root)
     self._InstallPackages(chroot_path)
+    self._InstallIconograph(chroot_path)
     if FLAGS.shell:
       self._Exec('bash')
     self._Squash(chroot_path, union_path)
