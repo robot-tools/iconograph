@@ -30,9 +30,14 @@ class GrubUpdater(object):
     self._image_path = '/' + os.path.relpath(self._image_dir, self._boot_dir)
 
   def Update(self):
+    current = os.readlink(os.path.join(self._image_dir, 'current'))
+
     sys.stdout.write("""
 set timeout=5
-""")
+set default=%(default_image_filename)s
+""" % {
+      'default_image_filename': os.path.basename(current),
+    })
 
     files = []
     for filename in os.listdir(self._image_dir):
