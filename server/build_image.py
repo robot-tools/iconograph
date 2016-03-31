@@ -3,6 +3,7 @@
 import argparse
 import os
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -74,6 +75,7 @@ class ImageBuilder(object):
     'openssh-server',
     'python3-openssl',
     'sudo',
+    'ubuntu-standard',
     'user-setup',
     'wget',
   ]
@@ -89,6 +91,11 @@ class ImageBuilder(object):
     'universe',
   ]
 
+  _DIVERSIONS = {
+    '/sbin/initctl': '/bin/true',
+    '/etc/init.d/systemd-logind': '/bin/true',
+  }
+
   def __init__(self, source_iso, dest_iso, archive, arch, release, ca_cert, base_url, image_type):
     self._source_iso = source_iso
     self._dest_iso = dest_iso
@@ -101,16 +108,15 @@ class ImageBuilder(object):
 
     self._ico_server_path = os.path.dirname(sys.argv[0])
 
-    self._exec_chroot = []
     self._umount = []
     self._rmtree = []
 
-  def _Exec(self, *args):
+  def _Exec(self, *args, **kwargs):
     print('+', args)
-    subprocess.check_call(args)
+    subprocess.check_call(args, **kwargs)
 
-  def _ExecChroot(self, chroot_path, *args):
-    self._Exec('chroot', chroot_path, *args)
+  def _ExecChroot(self, chroot_path, *args, **kwargs):
+    self._Exec('chroot', chroot_path, *args, **kwargs)
 
   def _Debootstrap(self, root):
     path = os.path.join(root, 'chroot')
@@ -164,6 +170,27 @@ class ImageBuilder(object):
           'sections': ' '.join(self._SECTIONS),
         })
 
+  def _AddDiversions(self, chroot_path):
+    for source, dest in self._DIVERSIONS.items():
+      self._ExecChroot(
+          chroot_path,
+          'dpkg-divert',
+          '--local',
+          '--rename',
+          '--add',
+          source)
+      self._ExecChroot(
+          chroot_path,
+          'ln',
+          '--symbolic',
+          '--force',
+          dest,
+          source)
+    with open(os.path.join(chroot_path, 'usr', 'sbin', 'policy-rc.d'), 'w') as fh:
+      fh.write('#!/bin/sh\n')
+      fh.write('exit 101\n')
+      os.fchmod(fh.fileno(), stat.S_IRWXU)
+
   def _InstallPackages(self, chroot_path):
     self._ExecChroot(
         chroot_path,
@@ -175,16 +202,24 @@ class ImageBuilder(object):
         'install',
         '--assume-yes',
         *self._BASE_PACKAGES)
-    self._exec_chroot.append([
-        chroot_path,
-        'service',
-        'atd',
-        'stop',
-    ])
     self._ExecChroot(
         chroot_path,
         'apt-get',
         'clean')
+
+  def _RemoveDiversions(self, chroot_path):
+    for source in self._DIVERSIONS:
+      self._ExecChroot(
+          chroot_path,
+          'rm',
+          source)
+      self._ExecChroot(
+          chroot_path,
+          'dpkg-divert',
+          '--rename',
+          '--remove',
+         source)
+    os.unlink(os.path.join(chroot_path, 'usr', 'sbin', 'policy-rc.d'))
 
   def _InstallIconograph(self, chroot_path):
     self._ExecChroot(
@@ -246,10 +281,12 @@ class ImageBuilder(object):
     chroot_path = self._Debootstrap(root)
     union_path = self._CreateUnion(root)
     self._FixSourcesList(chroot_path)
+    self._AddDiversions(chroot_path)
     self._InstallPackages(chroot_path)
+    self._RemoveDiversions(chroot_path)
     self._InstallIconograph(chroot_path)
     if FLAGS.shell:
-      self._Exec('bash')
+      self._Exec('bash', cwd=root)
     self._Squash(chroot_path, union_path)
     self._FixGrub(union_path)
     self._CreateISO(union_path)
@@ -258,8 +295,6 @@ class ImageBuilder(object):
     try:
       self._BuildImage()
     finally:
-      for cmd in reversed(self._exec_chroot):
-        self._ExecChroot(*cmd)
       for path in reversed(self._umount):
         self._Exec('umount', path)
       for path in self._rmtree:
