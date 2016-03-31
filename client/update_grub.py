@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import string
 import sys
 
 
@@ -20,6 +21,8 @@ FLAGS = parser.parse_args()
 
 
 class GrubUpdater(object):
+
+  _HOTKEYS = string.digits + string.ascii_letters
 
   def __init__(self, image_dir, boot_dir):
     self._image_dir = image_dir
@@ -45,9 +48,9 @@ set default=%(default_image_filename)s
         continue
       files.append(filename)
 
-    for filename in sorted(files, reverse=True):
+    for i, filename in enumerate(sorted(files, reverse=True)):
       sys.stdout.write("""
-menuentry "%(image_filename)s" {
+menuentry "%(image_filename)s" --hotkey=%(hotkey)s {
   search --no-floppy --file --set=root %(image_path)s/%(image_filename)s
   iso_path="%(image_path)s/%(image_filename)s"
   export iso_path
@@ -58,6 +61,7 @@ menuentry "%(image_filename)s" {
 """ % {
         'image_filename': filename,
         'image_path': self._image_path,
+        'hotkey': self._HOTKEYS[i],
       })
 
 
