@@ -62,23 +62,16 @@ class ImageBuilder(object):
 
   _BASE_PACKAGES = [
     'daemontools-run',
-    'debconf',
     'devscripts',
-    'dialog',
     'git',
-    'gnupg',
-    'isc-dhcp-client',
-    'locales',
     'nano',
-    'net-tools',
     'iputils-ping',
+    'linux-firmware',
     'openssh-server',
     'python3-openssl',
-    'sudo',
+    'ubuntu-minimal',
     'ubuntu-standard',
     'user-setup',
-    'vim',
-    'wget',
   ]
 
   _SUITES = [
@@ -201,6 +194,7 @@ class ImageBuilder(object):
       os.fchmod(fh.fileno(), stat.S_IRWXU)
 
   def _InstallPackages(self, chroot_path):
+    os.environ['DEBIAN_FRONTEND'] = 'noninteractive'
     self._ExecChroot(
         chroot_path,
         'apt-get',
