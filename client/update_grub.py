@@ -40,7 +40,7 @@ set timeout=5
         continue
       files.append(filename)
 
-    for filename in files.sorted(reverse=True):
+    for filename in sorted(files, reverse=True):
       sys.stdout.write("""
 menuentry "%(image_filename)s" {
   search --no-floppy --file --set=root %(image_path)s/%(image_filename)s
