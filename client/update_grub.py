@@ -30,9 +30,17 @@ class GrubUpdater(object):
     self._image_path = '/' + os.path.relpath(self._image_dir, self._boot_dir)
 
   def Update(self):
+    sys.stdout.write("""
+set timeout=5
+""")
+
+    files = []
     for filename in os.listdir(self._image_dir):
       if not filename.endswith('.iso'):
         continue
+      files.append(filename)
+
+    for filename in files.sorted(reverse=True):
       sys.stdout.write("""
 menuentry "%(image_filename)s" {
   search --no-floppy --file --set=root %(image_path)s/%(image_filename)s
