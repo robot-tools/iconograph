@@ -155,7 +155,7 @@ class Fetcher(object):
 
     print('Changing current link to:', path)
     temp_path = tempfile.mktemp(dir=self._image_dir)
-    os.symlink(path, temp_path)
+    os.symlink(filename, temp_path)
     os.rename(temp_path, current_path)
 
   def Fetch(self):
