@@ -101,6 +101,7 @@ class ImageBuilder(object):
 
     self._ico_server_path = os.path.dirname(sys.argv[0])
 
+    self._exec_chroot = []
     self._umount = []
     self._rmtree = []
 
@@ -133,19 +134,10 @@ class ImageBuilder(object):
         iso_path)
     self._umount.append(iso_path)
 
-    tmpfs_path = os.path.join(root, 'tmpfs')
-    os.mkdir(tmpfs_path)
-    self._Exec(
-        'mount',
-        '--types', 'tmpfs',
-        'none',
-        tmpfs_path)
-    self._umount.append(tmpfs_path)
-
-    upper_path = os.path.join(tmpfs_path, 'upper')
+    upper_path = os.path.join(root, 'upper')
     os.mkdir(upper_path)
 
-    work_path = os.path.join(tmpfs_path, 'work')
+    work_path = os.path.join(root, 'work')
     os.mkdir(work_path)
 
     union_path = os.path.join(root, 'union')
@@ -183,6 +175,12 @@ class ImageBuilder(object):
         'install',
         '--assume-yes',
         *self._BASE_PACKAGES)
+    self._exec_chroot.append([
+        chroot_path,
+        'service',
+        'atd',
+        'stop',
+    ])
     self._ExecChroot(
         chroot_path,
         'apt-get',
@@ -238,6 +236,13 @@ class ImageBuilder(object):
 
     print('Building image in:', root)
 
+    self._Exec(
+        'mount',
+        '--types', 'tmpfs',
+        'none',
+        root)
+    self._umount.append(root)
+
     chroot_path = self._Debootstrap(root)
     union_path = self._CreateUnion(root)
     self._FixSourcesList(chroot_path)
@@ -253,8 +258,9 @@ class ImageBuilder(object):
     try:
       self._BuildImage()
     finally:
-      pass
-      for path in self._umount:
+      for cmd in reversed(self._exec_chroot):
+        self._ExecChroot(*cmd)
+      for path in reversed(self._umount):
         self._Exec('umount', path)
       for path in self._rmtree:
         shutil.rmtree(path)
