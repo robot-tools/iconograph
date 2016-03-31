@@ -223,7 +223,7 @@ class ImageBuilder(object):
 
   def _FixGrub(self, union_path):
     shutil.copyfile(
-        os.path.join(self._ico_server_path, 'iso_files', 'grub.cfg'),
+        os.path.join(self._ico_server_path, 'iso_files', 'loopback.cfg'),
         os.path.join(union_path, 'boot', 'grub', 'loopback.cfg'))
 
   def _CreateISO(self, union_path):
