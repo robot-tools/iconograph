@@ -21,23 +21,8 @@ parser.add_argument(
     action='store',
     default='http://archive.ubuntu.com/ubuntu')
 parser.add_argument(
-    '--base-url',
-    dest='base_url',
-    action='store',
-    required=True)
-parser.add_argument(
-    '--ca-cert',
-    dest='ca_cert',
-    action='store',
-    required=True)
-parser.add_argument(
     '--dest-iso',
     dest='dest_iso',
-    action='store',
-    required=True)
-parser.add_argument(
-    '--image-type',
-    dest='image_type',
     action='store',
     required=True)
 parser.add_argument(
@@ -65,15 +50,12 @@ FLAGS = parser.parse_args()
 class ImageBuilder(object):
 
   _BASE_PACKAGES = [
-    'daemontools-run',
     'devscripts',
-    'git',
     'nano',
     'iputils-ping',
     'linux-firmware',
     'linux-firmware-nonfree',
     'openssh-server',
-    'python3-openssl',
     'ubuntu-minimal',
     'ubuntu-standard',
     'user-setup',
@@ -100,15 +82,12 @@ class ImageBuilder(object):
     'loopback.cfg': 'boot/grub/loopback.cfg',
   }
 
-  def __init__(self, source_iso, dest_iso, archive, arch, release, ca_cert, base_url, image_type, modules):
+  def __init__(self, source_iso, dest_iso, archive, arch, release, modules):
     self._source_iso = source_iso
     self._dest_iso = dest_iso
     self._archive = archive
     self._arch = arch
     self._release = release
-    self._ca_cert = ca_cert
-    self._base_url = base_url
-    self._image_type = image_type
     self._modules = modules
 
     self._ico_server_path = os.path.dirname(sys.argv[0])
@@ -233,32 +212,6 @@ class ImageBuilder(object):
          source)
     os.unlink(os.path.join(chroot_path, 'usr', 'sbin', 'policy-rc.d'))
 
-  def _InstallIconograph(self, chroot_path):
-    self._ExecChroot(
-        chroot_path,
-        'git',
-        'clone',
-        'https://github.com/robot-tools/iconograph.git')
-
-    os.mkdir(os.path.join(chroot_path, 'iconograph', 'config'))
-    shutil.copyfile(
-        self._ca_cert,
-        os.path.join(chroot_path, 'iconograph', 'config', 'ca.cert.pem'))
-
-    path = os.path.join(chroot_path, 'iconograph', 'client', 'flags')
-    with open(path, 'w') as fh:
-      fh.write('--image-type=%(image_type)s --base-url=%(base_url)s\n' % {
-        'image_type': self._image_type,
-        'base_url': self._base_url,
-      })
-
-    self._ExecChroot(
-        chroot_path,
-        'ln',
-        '--symbolic',
-        '/iconograph/client',
-        '/etc/service/iconograph')
-
   def _Squash(self, chroot_path, union_path):
     self._Exec(
         'mksquashfs',
@@ -298,7 +251,6 @@ class ImageBuilder(object):
     self._InstallPackages(chroot_path)
     self._RunModules(chroot_path)
     self._RemoveDiversions(chroot_path)
-    self._InstallIconograph(chroot_path)
     if FLAGS.shell:
       self._Exec('bash', cwd=root)
     self._Squash(chroot_path, union_path)
@@ -324,9 +276,6 @@ def main():
       FLAGS.archive,
       FLAGS.arch,
       FLAGS.release,
-      FLAGS.ca_cert,
-      FLAGS.base_url,
-      FLAGS.image_type,
       FLAGS.modules)
   builder.BuildImage()
 
