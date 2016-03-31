@@ -41,6 +41,10 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
+    '--module',
+    dest='modules',
+    nargs='*')
+parser.add_argument(
     '--release',
     dest='release',
     action='store',
@@ -92,15 +96,11 @@ class ImageBuilder(object):
     '/etc/init.d/systemd-logind': '/bin/true',
   }
 
-  _CHROOT_COPIES = {
-    'persistent.conf': 'etc/init/persistent.conf',
-  }
-
   _ISO_COPIES = {
     'loopback.cfg': 'boot/grub/loopback.cfg',
   }
 
-  def __init__(self, source_iso, dest_iso, archive, arch, release, ca_cert, base_url, image_type):
+  def __init__(self, source_iso, dest_iso, archive, arch, release, ca_cert, base_url, image_type, modules):
     self._source_iso = source_iso
     self._dest_iso = dest_iso
     self._archive = archive
@@ -109,6 +109,7 @@ class ImageBuilder(object):
     self._ca_cert = ca_cert
     self._base_url = base_url
     self._image_type = image_type
+    self._modules = modules
 
     self._ico_server_path = os.path.dirname(sys.argv[0])
 
@@ -209,6 +210,15 @@ class ImageBuilder(object):
         'apt-get',
         'clean')
 
+  def _RunModules(self, chroot_path):
+    for module in self._modules:
+      self._Exec(
+          '%(module)s --chroot-path=%(chroot_path)s' % {
+            'module': module,
+            'chroot_path': chroot_path,
+          },
+          shell=True)
+
   def _RemoveDiversions(self, chroot_path):
     for source in self._DIVERSIONS:
       self._ExecChroot(
@@ -222,12 +232,6 @@ class ImageBuilder(object):
           '--remove',
          source)
     os.unlink(os.path.join(chroot_path, 'usr', 'sbin', 'policy-rc.d'))
-
-  def _CopyChrootFiles(self, chroot_path):
-    for source, dest in self._CHROOT_COPIES.items():
-      shutil.copyfile(
-          os.path.join(self._ico_server_path, 'chroot_files', source),
-          os.path.join(chroot_path, dest))
 
   def _InstallIconograph(self, chroot_path):
     self._ExecChroot(
@@ -292,8 +296,8 @@ class ImageBuilder(object):
     self._FixSourcesList(chroot_path)
     self._AddDiversions(chroot_path)
     self._InstallPackages(chroot_path)
+    self._RunModules(chroot_path)
     self._RemoveDiversions(chroot_path)
-    self._CopyChrootFiles(chroot_path)
     self._InstallIconograph(chroot_path)
     if FLAGS.shell:
       self._Exec('bash', cwd=root)
@@ -322,7 +326,8 @@ def main():
       FLAGS.release,
       FLAGS.ca_cert,
       FLAGS.base_url,
-      FLAGS.image_type)
+      FLAGS.image_type,
+      FLAGS.modules)
   builder.BuildImage()
 
 

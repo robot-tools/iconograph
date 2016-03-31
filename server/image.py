@@ -75,7 +75,7 @@ class Imager(object):
     time.sleep(1) # yuck
     self._Exec(
         'mkfs.ext4',
-        '-L', 'boot',
+        '-L', 'BOOT',
         '-F',
         self._PartDev(1))
 
@@ -89,7 +89,7 @@ class Imager(object):
       time.sleep(1) # yuck
       self._Exec(
           'mkfs.ext4',
-          '-L', 'persistent',
+          '-L', 'PERSISTENT',
           '-F',
           self._PartDev(2))
 
