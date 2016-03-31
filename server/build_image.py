@@ -97,6 +97,14 @@ class ImageBuilder(object):
     '/etc/init.d/systemd-logind': '/bin/true',
   }
 
+  _CHROOT_COPIES = {
+    'persistent.conf': 'etc/init/persistent.conf',
+  }
+
+  _ISO_COPIES = {
+    'loopback.cfg': 'boot/grub/loopback.cfg',
+  }
+
   def __init__(self, source_iso, dest_iso, archive, arch, release, ca_cert, base_url, image_type):
     self._source_iso = source_iso
     self._dest_iso = dest_iso
@@ -222,6 +230,12 @@ class ImageBuilder(object):
          source)
     os.unlink(os.path.join(chroot_path, 'usr', 'sbin', 'policy-rc.d'))
 
+  def _CopyChrootFiles(self, chroot_path):
+    for source, dest in self._CHROOT_COPIES.items():
+      shutil.copyfile(
+          os.path.join(self._ico_server_path, 'chroot_files', source),
+          os.path.join(chroot_path, dest))
+
   def _InstallIconograph(self, chroot_path):
     self._ExecChroot(
         chroot_path,
@@ -255,10 +269,11 @@ class ImageBuilder(object):
         os.path.join(union_path, 'casper', 'filesystem.squashfs'),
         '-noappend')
 
-  def _FixGrub(self, union_path):
-    shutil.copyfile(
-        os.path.join(self._ico_server_path, 'iso_files', 'loopback.cfg'),
-        os.path.join(union_path, 'boot', 'grub', 'loopback.cfg'))
+  def _CopyISOFiles(self, union_path):
+    for source, dest in self._ISO_COPIES.items():
+      shutil.copyfile(
+          os.path.join(self._ico_server_path, 'iso_files', source),
+          os.path.join(union_path, dest))
 
   def _CreateISO(self, union_path):
     self._Exec(
@@ -285,11 +300,12 @@ class ImageBuilder(object):
     self._AddDiversions(chroot_path)
     self._InstallPackages(chroot_path)
     self._RemoveDiversions(chroot_path)
+    self._CopyChrootFiles(chroot_path)
     self._InstallIconograph(chroot_path)
     if FLAGS.shell:
       self._Exec('bash', cwd=root)
     self._Squash(chroot_path, union_path)
-    self._FixGrub(union_path)
+    self._CopyISOFiles(union_path)
     self._CreateISO(union_path)
 
   def BuildImage(self):
