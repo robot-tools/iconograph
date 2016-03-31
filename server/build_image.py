@@ -77,6 +77,7 @@ class ImageBuilder(object):
     'sudo',
     'ubuntu-standard',
     'user-setup',
+    'vim',
     'wget',
   ]
 
