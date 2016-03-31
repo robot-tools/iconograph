@@ -244,7 +244,7 @@ class ImageBuilder(object):
 
     path = os.path.join(chroot_path, 'iconograph', 'client', 'flags')
     with open(path, 'w') as fh:
-      fh.write('--image-type=%(image_type)s --base-url=%(base_url)s' % {
+      fh.write('--image-type=%(image_type)s --base-url=%(base_url)s\n' % {
         'image_type': self._image_type,
         'base_url': self._base_url,
       })
