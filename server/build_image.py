@@ -67,6 +67,7 @@ class ImageBuilder(object):
     'nano',
     'iputils-ping',
     'linux-firmware',
+    'linux-firmware-nonfree',
     'openssh-server',
     'python3-openssl',
     'ubuntu-minimal',
@@ -83,6 +84,7 @@ class ImageBuilder(object):
     'main',
     'restricted',
     'universe',
+    'multiverse',
   ]
 
   _DIVERSIONS = {
