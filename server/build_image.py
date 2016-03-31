@@ -110,9 +110,6 @@ class ImageBuilder(object):
 
     self._ico_server_path = os.path.dirname(sys.argv[0])
 
-    self._umount = []
-    self._rmtree = []
-
   def _Exec(self, *args, **kwargs):
     print('+', args)
     subprocess.check_call(args, **kwargs)
@@ -303,6 +300,8 @@ class ImageBuilder(object):
     self._CreateISO(union_path)
 
   def BuildImage(self):
+    self._umount = []
+    self._rmtree = []
     try:
       self._BuildImage()
     finally:
