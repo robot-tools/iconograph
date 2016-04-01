@@ -184,10 +184,6 @@ class ImageBuilder(object):
         'install',
         '--assume-yes',
         *self._BASE_PACKAGES)
-    self._ExecChroot(
-        chroot_path,
-        'apt-get',
-        'clean')
 
   def _RunModules(self, chroot_path):
     for module in self._modules:
@@ -197,6 +193,12 @@ class ImageBuilder(object):
             'chroot_path': chroot_path,
           },
           shell=True)
+
+  def _CleanPackages(self, chroot_path):
+    self._ExecChroot(
+        chroot_path,
+        'apt-get',
+        'clean')
 
   def _RemoveDiversions(self, chroot_path):
     for source in self._DIVERSIONS:
@@ -250,6 +252,7 @@ class ImageBuilder(object):
     self._AddDiversions(chroot_path)
     self._InstallPackages(chroot_path)
     self._RunModules(chroot_path)
+    self._CleanPackages(chroot_path)
     self._RemoveDiversions(chroot_path)
     if FLAGS.shell:
       self._Exec('bash', cwd=root)
