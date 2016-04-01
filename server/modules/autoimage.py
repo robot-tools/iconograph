@@ -71,7 +71,8 @@ description "AutoImage"
 start on net-device-up
 
 script
-  /autoimage/server/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/autoimage/config/ca.cert.pem --base-url=%(base_url)s
+  chvt 7
+  /autoimage/server/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/autoimage/config/ca.cert.pem --base-url=%(base_url)s </dev/tty7 >/dev/tty7
 end script
 """ % {
       'device': FLAGS.device,
