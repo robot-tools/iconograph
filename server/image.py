@@ -6,7 +6,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import time
 
 
 parser = argparse.ArgumentParser(description='iconograph build_image')
@@ -55,8 +54,18 @@ class Imager(object):
     subprocess.check_call(args, **kwargs)
 
   def _PartDev(self, part_num):
-    # TODO: better way to figure out what the partition device is
-    return '%s%d' % (self._device, part_num)
+    args = {
+      'device': self._device,
+      'part': part_num,
+    }
+    options = [
+      '%(device)s%(part)d' % args,
+      '%(device)sp%(part)d' % args,
+    ]
+    while True:
+      for option in options:
+        if os.path.exists(option):
+          return option
 
   def _PartitionAndMkFS(self):
     self._Exec(
@@ -72,7 +81,6 @@ class Imager(object):
         '--align', 'optimal',
         self._device,
         'mkpart', 'primary', 'ext4', '0%', boot_stop)
-    time.sleep(1) # yuck
     self._Exec(
         'mkfs.ext4',
         '-L', 'BOOT',
@@ -86,7 +94,6 @@ class Imager(object):
           '--align', 'optimal',
           self._device,
           'mkpart', 'primary', 'ext4', boot_stop, '100%')
-      time.sleep(1) # yuck
       self._Exec(
           'mkfs.ext4',
           '-L', 'PERSISTENT',
