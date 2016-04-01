@@ -75,9 +75,11 @@ def main():
           *args,
           stdin=fh_in,
           stdout=fh)
+      os.fchmod(fh.fileno(), 0o644)
       os.rename(fh.name, signed_manifest)
     except:
       os.unlink(fh.name)
+      raise
 
 
 if __name__ == '__main__':

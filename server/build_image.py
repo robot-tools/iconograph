@@ -3,7 +3,6 @@
 import argparse
 import os
 import shutil
-import stat
 import subprocess
 import sys
 import tempfile
@@ -171,7 +170,7 @@ class ImageBuilder(object):
     with open(os.path.join(chroot_path, 'usr', 'sbin', 'policy-rc.d'), 'w') as fh:
       fh.write('#!/bin/sh\n')
       fh.write('exit 101\n')
-      os.fchmod(fh.fileno(), stat.S_IRWXU)
+      os.fchmod(fh.fileno(), 0o744)
 
   def _InstallPackages(self, chroot_path):
     os.environ['DEBIAN_FRONTEND'] = 'noninteractive'
