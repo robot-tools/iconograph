@@ -22,11 +22,6 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
-    '--image-type',
-    dest='image_type',
-    action='store',
-    required=True)
-parser.add_argument(
     '--old-manifest',
     dest='old_manifest',
     action='store')
@@ -35,14 +30,11 @@ FLAGS = parser.parse_args()
 
 class ManifestBuilder(object):
 
-  _FILE_REGEX = '^%(image_type)s\.(?P<timestamp>\d+)\.iso$'
+  _FILE_REGEX = re.compile('^(?P<timestamp>\d+)\.iso$')
   _BUF_SIZE = 2 ** 16
 
-  def __init__(self, image_dir, image_type, old_manifest):
+  def __init__(self, image_dir, old_manifest):
     self._image_dir = image_dir
-    self._file_regex = re.compile(self._FILE_REGEX % {
-        'image_type': image_type,
-    })
     self._old_manifest = old_manifest
 
   def _Rollouts(self):
@@ -64,7 +56,7 @@ class ManifestBuilder(object):
     }
     rollouts = self._Rollouts()
     for filename in os.listdir(self._image_dir):
-      match = self._file_regex.match(filename)
+      match = self._FILE_REGEX.match(filename)
       if not match:
         continue
       timestamp = int(match.group('timestamp'))
@@ -86,7 +78,7 @@ class ManifestBuilder(object):
 
 
 def main():
-  builder = ManifestBuilder(FLAGS.image_dir, FLAGS.image_type, FLAGS.old_manifest)
+  builder = ManifestBuilder(FLAGS.image_dir, FLAGS.old_manifest)
   manifest = builder.BuildManifest()
   json.dump(manifest, sys.stdout, sort_keys=True, indent=4)
   sys.stdout.write('\n')

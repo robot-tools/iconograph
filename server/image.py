@@ -26,11 +26,6 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
-    '--image-type',
-    dest='image_type',
-    action='store',
-    required=True)
-parser.add_argument(
     '--persistent-percent',
     dest='persistent_percent',
     action='store',
@@ -41,12 +36,11 @@ FLAGS = parser.parse_args()
 
 class Imager(object):
 
-  def __init__(self, device, persistent_percent, base_url, ca_cert, image_type):
+  def __init__(self, device, persistent_percent, base_url, ca_cert):
     self._device = device
     self._persistent_percent = persistent_percent
     self._base_url = base_url
     self._ca_cert = ca_cert
-    self._image_type = image_type
 
     self._icon_server_path = os.path.dirname(sys.argv[0])
 
@@ -130,8 +124,7 @@ class Imager(object):
         fetcher,
         '--image-dir', image_path,
         '--base-url', self._base_url,
-        '--ca-cert', self._ca_cert,
-        '--image-type', self._image_type)
+        '--ca-cert', self._ca_cert)
 
     return image_path
 
@@ -167,7 +160,7 @@ class Imager(object):
 
 
 def main():
-  imager = Imager(FLAGS.device, FLAGS.persistent_percent, FLAGS.base_url, FLAGS.ca_cert, FLAGS.image_type)
+  imager = Imager(FLAGS.device, FLAGS.persistent_percent, FLAGS.base_url, FLAGS.ca_cert)
   imager.Image()
 
 

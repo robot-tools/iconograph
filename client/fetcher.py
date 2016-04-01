@@ -30,11 +30,6 @@ parser.add_argument(
     dest='image_dir',
     action='store',
     required=True)
-parser.add_argument(
-    '--image-type',
-    dest='image_type',
-    action='store',
-    required=True)
 FLAGS = parser.parse_args()
 
 
@@ -55,9 +50,8 @@ class Fetcher(object):
   _BUF_SIZE = 2 ** 16
   _MAX_BP = 10000
 
-  def __init__(self, base_url, image_type, ca_cert, image_dir):
+  def __init__(self, base_url, ca_cert, image_dir):
     self._base_url = base_url
-    self._image_type = image_type
     self._ca_cert_path = ca_cert
     self._image_dir = image_dir
 
@@ -98,7 +92,7 @@ class Fetcher(object):
     return json.loads(wrapped['inner'])
 
   def _GetManifest(self):
-    url = '%s/%s.manifest.json' % (self._base_url, self._image_type)
+    url = '%s/manifest.json' % (self._base_url)
     resp = urllib.request.urlopen(url).read().decode('utf8')
     return self._Unwrap(json.loads(resp))
 
@@ -114,7 +108,7 @@ class Fetcher(object):
     raise NoValidImage
 
   def _FetchImage(self, image):
-    filename = '%s.%d.iso' % (self._image_type, image['timestamp'])
+    filename = '%d.iso' % (image['timestamp'])
     path = os.path.join(self._image_dir, filename)
 
     if os.path.exists(path):
@@ -141,7 +135,7 @@ class Fetcher(object):
       raise
 
   def _SetCurrent(self, image):
-    filename = '%s.%d.iso' % (self._image_type, image['timestamp'])
+    filename = '%d.iso' % (image['timestamp'])
     path = os.path.join(self._image_dir, filename)
     current_path = os.path.join(self._image_dir, 'current')
 
@@ -166,7 +160,7 @@ class Fetcher(object):
 
 
 def main():
-  fetcher = Fetcher(FLAGS.base_url, FLAGS.image_type, FLAGS.ca_cert, FLAGS.image_dir)
+  fetcher = Fetcher(FLAGS.base_url, FLAGS.ca_cert, FLAGS.image_dir)
   fetcher.Fetch()
 
 
