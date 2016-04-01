@@ -7,6 +7,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 
 
 parser = argparse.ArgumentParser(description='iconograph build_image')
@@ -21,8 +22,8 @@ parser.add_argument(
     action='store',
     default='http://archive.ubuntu.com/ubuntu')
 parser.add_argument(
-    '--dest-iso',
-    dest='dest_iso',
+    '--image-dir',
+    dest='image_dir',
     action='store',
     required=True)
 parser.add_argument(
@@ -82,13 +83,13 @@ class ImageBuilder(object):
     'loopback.cfg': 'boot/grub/loopback.cfg',
   }
 
-  def __init__(self, source_iso, dest_iso, archive, arch, release, modules):
+  def __init__(self, source_iso, image_dir, archive, arch, release, modules):
     self._source_iso = source_iso
-    self._dest_iso = dest_iso
+    self._image_dir = image_dir
     self._archive = archive
     self._arch = arch
     self._release = release
-    self._modules = modules
+    self._modules = modules or []
 
     self._ico_server_path = os.path.dirname(sys.argv[0])
 
@@ -227,15 +228,18 @@ class ImageBuilder(object):
           os.path.join(self._ico_server_path, 'iso_files', source),
           os.path.join(union_path, dest))
 
-  def _CreateISO(self, union_path):
+  def _CreateISO(self, union_path, timestamp):
+    dest_iso = os.path.join(self._image_dir, '%d.iso' % timestamp)
     self._Exec(
         'grub-mkrescue',
-        '--output=%s' % self._dest_iso,
+        '--output=%s' % dest_iso,
         union_path)
 
   def _BuildImage(self):
     root = tempfile.mkdtemp()
     self._rmtree.append(root)
+
+    timestamp = int(time.time())
 
     print('Building image in:', root)
 
@@ -258,7 +262,7 @@ class ImageBuilder(object):
       self._Exec('bash', cwd=root)
     self._Squash(chroot_path, union_path)
     self._CopyISOFiles(union_path)
-    self._CreateISO(union_path)
+    self._CreateISO(union_path, timestamp)
 
   def BuildImage(self):
     self._umount = []
@@ -275,7 +279,7 @@ class ImageBuilder(object):
 def main():
   builder = ImageBuilder(
       FLAGS.source_iso,
-      FLAGS.dest_iso,
+      FLAGS.image_dir,
       FLAGS.archive,
       FLAGS.arch,
       FLAGS.release,
