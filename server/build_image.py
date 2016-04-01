@@ -28,7 +28,7 @@ parser.add_argument(
 parser.add_argument(
     '--module',
     dest='modules',
-    nargs='*')
+    action='append')
 parser.add_argument(
     '--release',
     dest='release',
