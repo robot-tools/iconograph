@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 
 
 parser = argparse.ArgumentParser(description='iconograph build_image')
@@ -54,6 +55,7 @@ class Imager(object):
     subprocess.check_call(args, **kwargs)
 
   def _PartDev(self, part_num):
+    time.sleep(1)
     args = {
       'device': self._device,
       'part': part_num,
