@@ -42,7 +42,7 @@ class Imager(object):
     self._base_url = base_url
     self._ca_cert = ca_cert
 
-    self._icon_server_path = os.path.dirname(sys.argv[0])
+    self._icon_path = os.path.dirname(sys.argv[0])
 
   def _Exec(self, *args, **kwargs):
     print('+', args)
@@ -118,7 +118,7 @@ class Imager(object):
     image_path = os.path.join(root, 'iconograph')
     os.mkdir(image_path)
 
-    fetcher = os.path.join(self._icon_server_path, '..', 'client', 'fetcher.py')
+    fetcher = os.path.join(self._icon_path, '..', 'client', 'fetcher.py')
 
     self._Exec(
         fetcher,
@@ -131,7 +131,7 @@ class Imager(object):
   def _CreateGrubCfg(self, root, image_path):
     grub_cfg_path = os.path.join(root, 'grub', 'grub.cfg')
 
-    update_grub = os.path.join(self._icon_server_path, '..', 'client', 'update_grub.py')
+    update_grub = os.path.join(self._icon_path, '..', 'client', 'update_grub.py')
 
     with open(grub_cfg_path, 'w') as fh:
       self._Exec(
