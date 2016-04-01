@@ -21,8 +21,7 @@ parser.add_argument(
 parser.add_argument(
     '--other-cert',
     dest='other_certs',
-    action='store',
-    nargs='*')
+    action='append')
 FLAGS = parser.parse_args()
 
 
