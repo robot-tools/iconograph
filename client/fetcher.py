@@ -147,7 +147,7 @@ class Fetcher(object):
     except FileNotFoundError:
       pass
 
-    print('Changing current link to:', path)
+    print('Changing current link to:', filename)
     temp_path = tempfile.mktemp(dir=self._image_dir)
     os.symlink(filename, temp_path)
     os.rename(temp_path, current_path)
