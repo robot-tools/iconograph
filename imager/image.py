@@ -9,7 +9,7 @@ import tempfile
 import time
 
 
-parser = argparse.ArgumentParser(description='iconograph build_image')
+parser = argparse.ArgumentParser(description='iconograph image')
 parser.add_argument(
     '--base-url',
     dest='base_url',
