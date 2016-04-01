@@ -55,7 +55,7 @@ def main():
       'apt-get',
       'install',
       '--assume-yes',
-      'git', 'python3-openssl')
+      'git', 'grub-pc', 'python3-openssl')
 
   ExecChroot(
       'git',
