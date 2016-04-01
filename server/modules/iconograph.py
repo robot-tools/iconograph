@@ -6,7 +6,7 @@ import shutil
 import subprocess
 
 
-parser = argparse.ArgumentParser(description='iconograph persistent')
+parser = argparse.ArgumentParser(description='iconograph install module')
 parser.add_argument(
     '--base-url',
     dest='base_url',
