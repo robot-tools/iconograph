@@ -4,6 +4,7 @@ import argparse
 import os
 import shutil
 import subprocess
+from urllib import parse
 
 
 parser = argparse.ArgumentParser(description='iconograph autoimage')
@@ -63,6 +64,8 @@ def main():
       FLAGS.ca_cert,
       os.path.join(FLAGS.chroot_path, 'autoimage', 'config', 'ca.cert.pem'))
 
+  parsed = parse.urlparse(FLAGS.base_url)
+
   init = os.path.join(FLAGS.chroot_path, 'etc', 'init', 'autoimage.conf')
   with open(init, 'w') as fh:
     fh.write("""
@@ -72,9 +75,12 @@ start on net-device-up
 
 script
   chvt 7
+  /autoimage/imager/wait_for_service.py --host=%(host)s --service=%(service)s </dev/tty7 >/dev/tty7
   /autoimage/imager/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/autoimage/config/ca.cert.pem --base-url=%(base_url)s </dev/tty7 >/dev/tty7
 end script
 """ % {
+      'host': parsed.host,
+      'service': parsed.port or parsed.scheme,
       'device': FLAGS.device,
       'persistent_percent': FLAGS.persistent_percent,
       'base_url': FLAGS.base_url,
