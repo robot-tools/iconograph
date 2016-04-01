@@ -22,11 +22,6 @@ parser.add_argument(
     dest='chroot_path',
     action='store',
     required=True)
-parser.add_argument(
-    '--image-type',
-    dest='image_type',
-    action='store',
-    required=True)
 FLAGS = parser.parse_args()
 
 
@@ -58,8 +53,7 @@ def main():
 
   path = os.path.join(FLAGS.chroot_path, 'iconograph', 'client', 'flags')
   with open(path, 'w') as fh:
-    fh.write('--image-type=%(image_type)s --base-url=%(base_url)s\n' % {
-      'image_type': FLAGS.image_type,
+    fh.write('--base-url=%(base_url)s\n' % {
       'base_url': FLAGS.base_url,
     })
 

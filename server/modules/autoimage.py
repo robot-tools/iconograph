@@ -28,11 +28,6 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
-    '--image-type',
-    dest='image_type',
-    action='store',
-    required=True)
-parser.add_argument(
     '--persistent-percent',
     dest='persistent_percent',
     action='store',
@@ -76,12 +71,11 @@ description "AutoImage"
 start on filesystem
 
 script
-  /autoimage/server/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/autoimage/config/ca.cert.pem --image-type=%(image_type)s --base-url=%(base_url)s
+  /autoimage/server/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/autoimage/config/ca.cert.pem --base-url=%(base_url)s
 end script
 """ % {
       'device': FLAGS.device,
       'persistent_percent': FLAGS.persistent_percent,
-      'image_type': FLAGS.image_type,
       'base_url': FLAGS.base_url,
     })
 
