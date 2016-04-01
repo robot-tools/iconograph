@@ -68,7 +68,7 @@ def main():
     fh.write("""
 description "AutoImage"
 
-start on filesystem
+start on net-device-up
 
 script
   /autoimage/server/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/autoimage/config/ca.cert.pem --base-url=%(base_url)s
