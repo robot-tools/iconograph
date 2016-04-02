@@ -5,9 +5,6 @@ It allows you to distribute your software intended to run on real hardware or
 inside a container as a single unit with its system dependencies, and to roll
 forward and backward in a secure, repeatable, staged manner.
 
-Images utilize a tmpfs overlay filesystem, so by default filesystem changes
-are discarded on reboot or upgrade.
-
 ## Overview
 
 ```
@@ -29,6 +26,20 @@ are discarded on reboot or upgrade.
 | +-----------------------------------------+ +-------------+ |
 +-------------------------------------------------------------+
 ```
+
+Icon supports multiple image options by building Live CD-style ISO images. It
+writes multiple ISO images to a /boot partition, and uses grub to select
+between them at boot time (with hotkeys for headless selection). A second grub
+instance runs inside the ISO to allow further customization.
+
+Images utilize a tmpfs overlay filesystem, so by default filesystem changes
+are discarded on reboot or upgrade. An optional /persistent filesystem allows
+data storage across reboots and upgrades/downgrades.
+
+Images optionally self-upgrade by fetching new images from an HTTP(S) source
+and updating the configuration of the outer grub instance. This removes the
+need for a separate OS instance to perform upgrades (and avoids figuring out
+how to upgrade that instance).
 
 ## Setup
 
