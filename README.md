@@ -106,6 +106,10 @@ It may be specified more than once.
 defaults to zero. The units are
 [basis points](https://en.wikipedia.org/wiki/Basis_point); 10000 means 100%.
 
+To push a rollout to more targets, edit /image/path/manifest.json.unsigned,
+and change rollout_\u2031 (u2031 is ‱, the symbol for basis point). Save,
+then re-run publish_manifest.py to generate the signed version.
+
 ### Imaging
 
 You can write created images to flash drives for installation on other systems,
