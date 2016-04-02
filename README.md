@@ -27,10 +27,11 @@ forward and backward in a secure, repeatable, staged manner.
 +-------------------------------------------------------------+
 ```
 
-Icon supports multiple image options by building Live CD-style ISO images. It
-writes multiple ISO images to a /boot partition, and uses grub to select
-between them at boot time (with hotkeys for headless selection). A second grub
-instance runs inside the ISO to allow further customization.
+Icon supports multiple image options at boot time by building Live CD-style ISO
+images. It writes multiple ISO images to a /boot partition, and uses grub to
+select between them at boot time (with hotkeys for headless selection). A second
+grub instance runs inside the ISO to allow further customization (e.g. running
+and upgrading memtest86).
 
 Images utilize a tmpfs overlay filesystem, so by default filesystem changes
 are discarded on reboot or upgrade. An optional /persistent filesystem allows
