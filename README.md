@@ -41,7 +41,7 @@ to make this process fast on subsequent runs.
 sudo server/build_image.py --image-dir=/output/path --release=trusty --source-iso=path/to/ubuntu-14.04.4-desktop-amd64.iso
 ```
 
-### Modules
+## Modules
 
 Modules are scripts that run after the chroot has been created. They can install
 packages, do configuration, etc. Icon has several stock modules, but you can
@@ -50,7 +50,7 @@ flags to build_image.py as long as the modules are compatible with each other.
 
 Stock modules:
 
-#### iconograph.py
+### iconograph.py
 
 Install icon inside the image. This allows the image to auto-update over HTTP.
 Use the build_image.py flag:
@@ -64,7 +64,7 @@ Optional flags:
 `--max-images` sets the number of recent images to keep. Older images are
 deleted. Defaults to 5. 0 means unlimited.
 
-#### persistent.py
+### persistent.py
 
 Mount a /persistent partition from a filesystem with LABEL=PERSISTENT. Allows
 data to persist across reboots, when it would normally be wiped by tmpfs.
@@ -74,7 +74,7 @@ Use the build_image.py flag:
 --module="server/modules/persistent.py"
 ```
 
-#### autoimage.py
+### autoimage.py
 
 Build an image that will partition, mkfs, and install an image from a different
 URL onto a target system. Used to create install USB drives, PXE boot, etc.
