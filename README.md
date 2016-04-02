@@ -1,11 +1,12 @@
 # Iconograph
 
-Iconograph ("icon") is a system for building and deploying Unbut system images.
+Iconograph ("icon") is a system for building and deploying Ubuntu system images.
 It allows you to distribute your software intended to run on real hardware or
 inside a container as a single unit with its system dependencies, and to roll
 forward and backward in a secure, repeatable, staged manner.
 
-Images utilize a tmpfs overlay filesystem, so by default changes are discarded.
+Images utilize a tmpfs overlay filesystem, so by default filesystem changes
+are discarded on reboot or upgrade.
 
 ## Setup
 
@@ -37,10 +38,12 @@ sudo server/build_image.py --image-dir=/output/path --release=trusty --source-is
 
 ### Modules
 
-Modules are scripts run after the chroot has been created. They can install
-packages, do configuration, etc. Icon has several stock packages, but you can
+Modules are scripts that run after the chroot has been created. They can install
+packages, do configuration, etc. Icon has several stock modules, but you can
 also create your own using them as examples. You can pass multiple --module
 flags to build_image.py as long as the modules are compatible with each other.
+
+Stock modules:
 
 #### iconograph.py
 
