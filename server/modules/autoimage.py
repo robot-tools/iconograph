@@ -77,7 +77,7 @@ stop on runlevel [!2345]
 
 script
   chvt 7
-  /autoimage/imager/wait_for_service.py --host=%(host)s --service=%(service)s </dev/tty7 >/dev/tty7 2>&1
+  /autoimage/client/wait_for_service.py --host=%(host)s --service=%(service)s </dev/tty7 >/dev/tty7 2>&1
   chvt 7
   /autoimage/imager/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/autoimage/config/ca.cert.pem --base-url=%(base_url)s </dev/tty7 >/dev/tty7 2>&1
   chvt 7
