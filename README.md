@@ -164,6 +164,17 @@ To push a rollout to more targets, edit /image/path/manifest.json.unsigned,
 and change rollout_\u2031 (u2031 is ‱, the symbol for basis point). Save,
 then re-run publish_manifest.py to generate the signed version.
 
+## Testing with qemu
+
+You can boot images for testing and issue reproduction using qemu.
+
+```base
+sudo apt-get install qemu-system-x86_64
+sudo kvm_ok
+# The above must "KVM acceleration can be used" to be able to get reasonable performance
+sudo qemu-system-x86_64 --curses --smp 2 --m 4G --netdev user,id=vmnic --device virtio-net,netdev=vmnic --enable-kvm --cdrom /path/to/image.iso
+```
+
 ## Imaging
 
 You can write created images to flash drives for installation on other systems,
