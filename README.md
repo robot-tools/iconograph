@@ -80,3 +80,37 @@ system.
 `--persistent-percent`, if non-zero, specifies the percent of the target
 device to allocate to a LABEL=PERSISTENT filesystem. If the inner image uses
 persistent.py, this filesystem will be automatically mounted.
+
+### Manifests
+
+Clients download a manifest file to determine available images and to verify
+authenticity and integrity of the image. You'll need to generate one on the
+server after each new image is built.
+
+Manifest files are signed using OpenSSL. You should run your own CA to do this;
+do NOT use a public CA cert. You can find instructions for setting up a CA
+[here](https://medium.com/where-the-flamingcow-roams/elliptic-curve-certificate-authority-bbdb9c3855f7#.7v40ox70s).
+
+To build a manifest, run:
+
+```bash
+server/publish_manifest.py --cert=/path/to/signing/cert.pem --key=/path/to/signing/key.pem --image-dir=/image/path
+```
+
+Optional flags:
+
+`--other-cert` specifies a chain certificate, such as your intermediate cert.
+It may be specified more than once.
+
+`--default-rollout` specifies the percentage rollout for new images; it
+defaults to zero. The units are
+[basis points](https://en.wikipedia.org/wiki/Basis_point); 10000 means 100%.
+
+### Imaging
+
+You can write created images to flash drives for installation on other systems,
+or manually write them to a drive. To do so:
+
+```bash
+imager/image.py --base-url=http://yourhost/ --ca-cert=/path/to/signing/cert.pem --device=/dev/sdx --persistent-percent=50
+```
