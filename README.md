@@ -59,6 +59,11 @@ Use the build_image.py flag:
 --module="server/modules/iconograph.py --base-url=http://yourhost/ --ca-cert=/path/to/signing/cert.pem"
 ```
 
+Optional flags:
+
+`--max-images` sets the number of recent images to keep. Older images are
+deleted. Defaults to 5. 0 means unlimited.
+
 #### persistent.py
 
 Mount a /persistent partition from a filesystem with LABEL=PERSISTENT. Allows
@@ -109,7 +114,7 @@ defaults to zero. The units are
 [basis points](https://en.wikipedia.org/wiki/Basis_point); 10000 means 100%.
 
 `--max-images` sets the number of recent images to keep. Older images are
-deleted.
+deleted. Defaults to 0, meaning unlimited.
 
 `--other-cert` specifies a chain certificate, such as your intermediate cert.
 It may be specified more than once.

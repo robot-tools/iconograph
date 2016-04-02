@@ -5,6 +5,7 @@ import codecs
 import json
 import hashlib
 import os
+import re
 import shutil
 import socket
 import struct
@@ -30,6 +31,12 @@ parser.add_argument(
     dest='image_dir',
     action='store',
     required=True)
+parser.add_argument(
+    '--max-images',
+    dest='max_images',
+    action='store',
+    type=int,
+    default=5)
 FLAGS = parser.parse_args()
 
 
@@ -49,6 +56,7 @@ class Fetcher(object):
 
   _BUF_SIZE = 2 ** 16
   _MAX_BP = 10000
+  _FILE_REGEX = re.compile('^(?P<timestamp>\d+)\.iso$')
 
   def __init__(self, base_url, ca_cert, image_dir):
     self._base_url = base_url
@@ -158,10 +166,26 @@ class Fetcher(object):
     self._FetchImage(image)
     self._SetCurrent(image)
 
+  def DeleteOldImages(self, max_images):
+    if not max_images:
+      return
+    images = []
+    for filename in os.listdir(self._image_dir):
+      match = self._FILE_REGEX.match(filename)
+      if not match:
+        continue
+      images.append((int(match.group('timestamp')), filename))
+    images.sort(reverse=True)
+    for timestamp, filename in images[max_images:]:
+      print('Deleting old image:', filename)
+      path = os.path.join(self._image_dir, filename)
+      os.unlink(path)
+
 
 def main():
   fetcher = Fetcher(FLAGS.base_url, FLAGS.ca_cert, FLAGS.image_dir)
   fetcher.Fetch()
+  fetcher.DeleteOldImages(FLAGS.max_images)
 
 
 if __name__ == '__main__':

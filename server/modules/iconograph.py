@@ -22,6 +22,12 @@ parser.add_argument(
     dest='chroot_path',
     action='store',
     required=True)
+parser.add_argument(
+    '--max-images',
+    dest='max_images',
+    action='store',
+    type=int,
+    default=5)
 FLAGS = parser.parse_args()
 
 
@@ -53,8 +59,9 @@ def main():
 
   path = os.path.join(FLAGS.chroot_path, 'iconograph', 'client', 'flags')
   with open(path, 'w') as fh:
-    fh.write('--base-url=%(base_url)s\n' % {
+    fh.write('--base-url=%(base_url)s --max-images=%(max_images)d\n' % {
       'base_url': FLAGS.base_url,
+      'max_images': FLAGS.max_images,
     })
 
   os.symlink(
