@@ -116,5 +116,6 @@ You can write created images to flash drives for installation on other systems,
 or manually write them to a drive. To do so:
 
 ```bash
-imager/image.py --base-url=http://yourhost/ --ca-cert=/path/to/signing/cert.pem --device=/dev/sdx --persistent-percent=50
+# Needs sudo to partition and mkfs devices
+sudo imager/image.py --base-url=http://yourhost/ --ca-cert=/path/to/signing/cert.pem --device=/dev/sdx --persistent-percent=50
 ```
