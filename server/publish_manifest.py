@@ -30,6 +30,12 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
+    '--max-images',
+    dest='max_images',
+    action='store',
+    type=int,
+    default=0)
+parser.add_argument(
     '--other-cert',
     dest='other_certs',
     action='append')
@@ -54,6 +60,7 @@ def main():
           '--default-rollout', str(FLAGS.default_rollout),
           '--image-dir', FLAGS.image_dir,
           '--old-manifest', unsigned_manifest,
+          '--max-images', str(FLAGS.max_images),
           stdout=fh)
       os.rename(fh.name, unsigned_manifest)
     except:

@@ -22,6 +22,12 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
+    '--max-images',
+    dest='max_images',
+    action='store',
+    type=int,
+    default=0)
+parser.add_argument(
     '--old-manifest',
     dest='old_manifest',
     action='store')
@@ -76,10 +82,21 @@ class ManifestBuilder(object):
     ret['images'].sort(key=lambda x: x['timestamp'], reverse=True)
     return ret
 
+  def DeleteOldImages(self, manifest, max_images):
+    if not max_images:
+      return
+    for image in manifest['images'][max_images:]:
+      filename = '%d.iso' % image['timestamp']
+      print('Deleting old image:', filename, file=sys.stderr)
+      path = os.path.join(self._image_dir, filename)
+      os.unlink(path)
+    manifest['images'] = manifest['images'][:max_images]
+
 
 def main():
   builder = ManifestBuilder(FLAGS.image_dir, FLAGS.old_manifest)
   manifest = builder.BuildManifest()
+  builder.DeleteOldImages(manifest, FLAGS.max_images)
   json.dump(manifest, sys.stdout, sort_keys=True, indent=4)
   sys.stdout.write('\n')
 
