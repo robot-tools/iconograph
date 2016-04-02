@@ -52,6 +52,10 @@ class NoValidImage(Error):
   pass
 
 
+class ManifestTimeRegressed(Error):
+  pass
+
+
 class Fetcher(object):
 
   _BUF_SIZE = 2 ** 16
@@ -102,7 +106,27 @@ class Fetcher(object):
   def _GetManifest(self):
     url = '%s/manifest.json' % (self._base_url)
     resp = urllib.request.urlopen(url).read().decode('utf8')
-    return self._Unwrap(json.loads(resp))
+    unwrapped = self._Unwrap(json.loads(resp))
+    self._ValidateManifest(unwrapped)
+    return unwrapped
+
+  def _ValidateManifest(self, new_manifest):
+    path = os.path.join(self._image_dir, 'manifest.json')
+    try:
+      with open(path, 'r') as fh:
+        old_manifest = json.load(fh)
+
+      # This checks for replay of an old manifest. Injecting an older manifest
+      # could allow an attacker to cause us to revert to an older image with
+      # security issues. Manifest timestamps are therefor required to always
+      # increase.
+      if old_manifest['timestamp'] > new_manifest['timestamp']:
+        raise ManifestTimeRegressed
+    except FileNotFoundError:
+      pass
+
+    with open(path, 'w') as fh:
+      json.dump(new_manifest, fh, indent=4)
 
   def _ChooseImage(self, manifest):
     hostname = socket.gethostname()
