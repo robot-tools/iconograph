@@ -79,6 +79,7 @@ class ImageBuilder(object):
   }
 
   _ISO_COPIES = {
+    'grub.cfg': 'boot/grub/grub.cfg',
     'loopback.cfg': 'boot/grub/loopback.cfg',
   }
 
