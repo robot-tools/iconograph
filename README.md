@@ -91,7 +91,7 @@ system.
 device to allocate to a LABEL=PERSISTENT filesystem. If the inner image uses
 persistent.py, this filesystem will be automatically mounted.
 
-### Manifests
+## Manifests
 
 Clients download a manifest file to determine available images and to verify
 authenticity and integrity of the image. You'll need to generate one on the
@@ -123,7 +123,7 @@ To push a rollout to more targets, edit /image/path/manifest.json.unsigned,
 and change rollout_\u2031 (u2031 is ‱, the symbol for basis point). Save,
 then re-run publish_manifest.py to generate the signed version.
 
-### Imaging
+## Imaging
 
 You can write created images to flash drives for installation on other systems,
 or manually write them to a drive. To do so:
