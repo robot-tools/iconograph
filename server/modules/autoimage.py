@@ -86,6 +86,8 @@ script
   echo "==================" >/dev/tty7
   echo "autoimage complete" >/dev/tty7
   echo "==================" >/dev/tty7
+
+  /autoimage/client/alert.py --type=happy </dev/tty7 >/dev/tty7
 end script
 """ % {
       'host': parsed.hostname,
