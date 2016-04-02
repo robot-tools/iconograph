@@ -91,6 +91,13 @@ system.
 device to allocate to a LABEL=PERSISTENT filesystem. If the inner image uses
 persistent.py, this filesystem will be automatically mounted.
 
+## Module API
+
+Modules are passed the following long-style arguments:
+
+`--chroot-path` specifies the absolute path to the root of the debootstrap
+chroot that will become the root filesystem of the inner image.
+
 ## Manifests
 
 Clients download a manifest file to determine available images and to verify
