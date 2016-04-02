@@ -104,12 +104,15 @@ server/publish_manifest.py --cert=/path/to/signing/cert.pem --key=/path/to/signi
 
 Optional flags:
 
-`--other-cert` specifies a chain certificate, such as your intermediate cert.
-It may be specified more than once.
-
 `--default-rollout` specifies the percentage rollout for new images; it
 defaults to zero. The units are
 [basis points](https://en.wikipedia.org/wiki/Basis_point); 10000 means 100%.
+
+`--max-images` sets the number of recent images to keep. Older images are
+deleted.
+
+`--other-cert` specifies a chain certificate, such as your intermediate cert.
+It may be specified more than once.
 
 To push a rollout to more targets, edit /image/path/manifest.json.unsigned,
 and change rollout_\u2031 (u2031 is ‱, the symbol for basis point). Save,
