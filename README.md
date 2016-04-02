@@ -8,6 +8,26 @@ forward and backward in a secure, repeatable, staged manner.
 Images utilize a tmpfs overlay filesystem, so by default filesystem changes
 are discarded on reboot or upgrade.
 
+## Overview
+
++-------------------------------------------------------------+
+| Physical disk                                               |
+| +-----------------------------------------+ +-------------+ |
+| | /boot                                   | | /persistent | |
+| | +-----------------+ +-----------------+ | |             | |
+| | | 1459629471.iso  | | 1459629717.iso  | | |             | |
+| | |                 | |                 | | |             | |
+| | | kernel          | | kernel          | | |             | |
+| | | initrd          | | initrd          | | |             | |
+| | |                 | |                 | | |             | |
+| | | +-------------+ | | +-------------+ | | |             | |
+| | | | squashfs    | | | | squashfs    | | | |             | |
+| | | | / (root) fs | | | | / (root) fs | | | |             | |
+| | | +-------------+ | | +-------------+ | | |             | |
+| | +-----------------+ +-----------------+ | |             | |
+| +-----------------------------------------+ +-------------+ |
++-------------------------------------------------------------+
+
 ## Setup
 
 ```bash
@@ -18,7 +38,7 @@ cd iconograph
 
 ## Image creation
 
-### Overview
+### Image composition
 
 Icon creates images by merging the kernel and boot system of a desktop live CD
 with a server/custom filesystem. You'll need to download the desktop live CD
