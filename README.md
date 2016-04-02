@@ -31,6 +31,11 @@ via HTTP. Install apache2 if need be.
 
 ### Simple image build
 
+build_image.py will call debootstrap, which will fetch packages from Ubuntu
+servers. You may want to
+[set up caching](https://medium.com/where-the-flamingcow-roams/apt-caching-for-debootstrap-bac499deebd5#.dvevbcc9z)
+to make this process fast on subsequent runs.
+
 ```bash
 # Must run as sudo to mount/umount images, tmpfs, and overlayfs
 sudo server/build_image.py --image-dir=/output/path --release=trusty --source-iso=path/to/ubuntu-14.04.4-desktop-amd64.iso
