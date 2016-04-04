@@ -186,6 +186,10 @@ class ImageBuilder(object):
         '--assume-yes',
         *self._BASE_PACKAGES)
 
+  def _WriteVersion(self, chroot_path, timestamp):
+    with open(os.path.join(chroot_path, 'etc', 'iconograph'), 'w') as fh:
+      fh.write('TIMESTAMP=%d\n' % timestamp)
+
   def _RunModules(self, chroot_path):
     for module in self._modules:
       self._Exec(
@@ -234,6 +238,7 @@ class ImageBuilder(object):
         'grub-mkrescue',
         '--output=%s' % dest_iso,
         union_path)
+    return dest_iso
 
   def _BuildImage(self):
     root = tempfile.mkdtemp()
@@ -255,6 +260,7 @@ class ImageBuilder(object):
     self._FixSourcesList(chroot_path)
     self._AddDiversions(chroot_path)
     self._InstallPackages(chroot_path)
+    self._WriteVersion(chroot_path, timestamp)
     self._RunModules(chroot_path)
     self._CleanPackages(chroot_path)
     self._RemoveDiversions(chroot_path)
@@ -262,7 +268,15 @@ class ImageBuilder(object):
       self._Exec('bash', cwd=root)
     self._Squash(chroot_path, union_path)
     self._CopyISOFiles(union_path)
-    self._CreateISO(union_path, timestamp)
+    iso_path = self._CreateISO(union_path, timestamp)
+
+    print("""
+
+========================
+Successfully built image:
+%s
+========================
+""" % iso_path)
 
   def BuildImage(self):
     self._umount = []
