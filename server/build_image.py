@@ -274,7 +274,7 @@ class ImageBuilder(object):
 
 ========================
 Successfully built image:
-%s
+\033[91m%s\033[00m
 ========================
 """ % iso_path)
 
