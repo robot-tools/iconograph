@@ -6,12 +6,12 @@ import json
 import hashlib
 import os
 import re
+import requests
 import shutil
 import socket
 import struct
 import subprocess
 import tempfile
-import urllib.request
 from OpenSSL import crypto
 
 
@@ -26,6 +26,18 @@ parser.add_argument(
     dest='ca_cert',
     action='store',
     required=True)
+parser.add_argument(
+    '--https-ca-cert',
+    dest='https_ca_cert',
+    action='store')
+parser.add_argument(
+    '--https-client-cert',
+    dest='https_client_cert',
+    action='store')
+parser.add_argument(
+    '--https-client-key',
+    dest='https_client_key',
+    action='store')
 parser.add_argument(
     '--image-dir',
     dest='image_dir',
@@ -62,10 +74,15 @@ class Fetcher(object):
   _MAX_BP = 10000
   _FILE_REGEX = re.compile('^(?P<timestamp>\d+)\.iso$')
 
-  def __init__(self, base_url, ca_cert, image_dir):
+  def __init__(self, base_url, ca_cert, image_dir, https_ca_cert, https_client_cert, https_client_key):
     self._base_url = base_url
     self._ca_cert_path = ca_cert
     self._image_dir = image_dir
+    self._session = requests.Session()
+    if https_ca_cert:
+      self._session.verify = https_ca_cert
+    if https_client_cert and https_client_key:
+      self._session.cert = (https_client_cert, https_client_key)
 
   def _VerifyChain(self, untrusted_certs, cert):
     tempdir = tempfile.mkdtemp()
@@ -105,8 +122,8 @@ class Fetcher(object):
 
   def _GetManifest(self):
     url = '%s/manifest.json' % (self._base_url)
-    resp = urllib.request.urlopen(url).read().decode('utf8')
-    unwrapped = self._Unwrap(json.loads(resp))
+    resp = self._session.get(url)
+    unwrapped = self._Unwrap(resp.json())
     self._ValidateManifest(unwrapped)
     return unwrapped
 
@@ -148,15 +165,12 @@ class Fetcher(object):
 
     url = '%s/%s' % (self._base_url, filename)
     print('Fetching:', url)
-    resp = urllib.request.urlopen(url)
+    resp = self._session.get(url, stream=True)
 
     hash_obj = hashlib.sha256()
     try:
       fh = tempfile.NamedTemporaryFile(dir=self._image_dir, delete=False)
-      while True:
-        data = resp.read(self._BUF_SIZE)
-        if not data:
-          break
+      for data in resp.iter_content(self._BUF_SIZE):
         hash_obj.update(data)
         fh.write(data)
       if hash_obj.hexdigest() != image['hash']:
@@ -207,7 +221,13 @@ class Fetcher(object):
 
 
 def main():
-  fetcher = Fetcher(FLAGS.base_url, FLAGS.ca_cert, FLAGS.image_dir)
+  fetcher = Fetcher(
+      FLAGS.base_url,
+      FLAGS.ca_cert,
+      FLAGS.image_dir,
+      FLAGS.https_ca_cert,
+      FLAGS.https_client_cert,
+      FLAGS.https_client_key)
   fetcher.Fetch()
   fetcher.DeleteOldImages(FLAGS.max_images)
 

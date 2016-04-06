@@ -21,6 +21,18 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
+    '--https-ca-cert',
+    dest='https_ca_cert',
+    action='store')
+parser.add_argument(
+    '--https-client-cert',
+    dest='https_client_cert',
+    action='store')
+parser.add_argument(
+    '--https-client-key',
+    dest='https_client_key',
+    action='store')
+parser.add_argument(
     '--device',
     dest='device',
     action='store',
@@ -36,11 +48,23 @@ FLAGS = parser.parse_args()
 
 class Imager(object):
 
-  def __init__(self, device, persistent_percent, base_url, ca_cert):
+  def __init__(self, device, persistent_percent, base_url, ca_cert, https_ca_cert, https_client_cert, https_client_key):
     self._device = device
     self._persistent_percent = persistent_percent
-    self._base_url = base_url
-    self._ca_cert = ca_cert
+
+    self._fetcher_args = [
+        '--base-url', base_url,
+        '--ca-cert', ca_cert,
+    ]
+    if https_ca_cert:
+      self._fetcher_args.extend([
+          '--https-ca-cert', https_ca_cert,
+      ])
+    if https_client_cert and https_client_key:
+      self._fetcher_args.extend([
+          '--https-client-cert', https_client_cert,
+          '--https-client-key', https_client_key,
+      ])
 
     self._icon_path = os.path.dirname(sys.argv[0])
 
@@ -123,8 +147,7 @@ class Imager(object):
     self._Exec(
         fetcher,
         '--image-dir', image_path,
-        '--base-url', self._base_url,
-        '--ca-cert', self._ca_cert)
+        *self._fetcher_args)
 
     return image_path
 
@@ -160,7 +183,14 @@ class Imager(object):
 
 
 def main():
-  imager = Imager(FLAGS.device, FLAGS.persistent_percent, FLAGS.base_url, FLAGS.ca_cert)
+  imager = Imager(
+      FLAGS.device,
+      FLAGS.persistent_percent,
+      FLAGS.base_url,
+      FLAGS.ca_cert,
+      FLAGS.https_ca_cert,
+      FLAGS.https_client_cert,
+      FLAGS.https_client_key)
   imager.Image()
 
 
