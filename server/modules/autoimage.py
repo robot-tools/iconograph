@@ -79,7 +79,7 @@ def main():
   image_flags = []
 
   if FLAGS.https_ca_cert:
-    https_ca_cert_path = os.path.join('autoimage', 'config', 'https-ca.cert.pem')
+    https_ca_cert_path = os.path.join('autoimage', 'config', 'ca.https.cert.pem')
     shutil.copyfile(
       FLAGS.https_ca_cert,
       os.path.join(FLAGS.chroot_path, https_ca_cert_path))
@@ -88,11 +88,11 @@ def main():
     ])
 
   if FLAGS.https_client_cert and FLAGS.https_client_key:
-    https_client_cert_path = os.path.join('autoimage', 'config', 'https-client.cert.pem')
+    https_client_cert_path = os.path.join('autoimage', 'config', 'client.https.cert.pem')
     shutil.copyfile(
       FLAGS.https_client_cert,
       os.path.join(FLAGS.chroot_path, https_client_cert_path))
-    https_client_key_path = os.path.join('autoimage', 'config', 'https-client.key.pem')
+    https_client_key_path = os.path.join('autoimage', 'config', 'client.https.key.pem')
     shutil.copyfile(
       FLAGS.https_client_key,
       os.path.join(FLAGS.chroot_path, https_client_key_path))
