@@ -103,8 +103,8 @@ description "CertClient %(tag)s"
 start on systemid-ready
 
 script
-  exec </dev/tty8 >/dev/tty8 2>&1
-  chvt 8
+  exec </dev/tty9 >/dev/tty9 2>&1
+  chvt 9
 
   KEY="/systemid/$(hostname).%(tag)s.key.pem"
   CERT="/systemid/$(hostname).%(tag)s.cert.pem"
@@ -115,16 +115,16 @@ script
     chmod 0400 "${KEY}"
   fi
 
-  chvt 8
+  chvt 9
   /icon/iconograph/client/wait_for_service.py --host=%(host)s --service=%(service)s
-  chvt 8
+  chvt 9
 
   if test ! -s "${CERT}"; then
     openssl req -new -key "${KEY}" -subj "${SUBJECT}" | /icon/certserver/certclient.py --ca-cert=/icon/config/ca.%(tag)s.certserver.cert.pem --client-cert=/icon/config/client.%(tag)s.certserver.cert.pem --client-key=/icon/config/client.%(tag)s.certserver.key.pem --server=%(server)s > "${CERT}"
     chmod 0444 "${CERT}"
   fi
 
-  chvt 8
+  chvt 9
 
   echo
   echo "=================="

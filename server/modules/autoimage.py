@@ -114,12 +114,12 @@ description "AutoImage"
 start on runlevel [2345]
 
 script
-  exec </dev/tty7 >/dev/tty7 2>&1
-  chvt 7
+  exec </dev/tty8 >/dev/tty8 2>&1
+  chvt 8
   /icon/iconograph/client/wait_for_service.py --host=%(host)s --service=%(service)s
-  chvt 7
+  chvt 8
   /icon/iconograph/imager/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/icon/config/ca.image.cert.pem --base-url=%(base_url)s %(image_flags)s
-  chvt 7
+  chvt 8
 
   echo
   echo "=================="
