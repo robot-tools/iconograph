@@ -12,8 +12,6 @@
 }
 
 .barcode {
-  width: 400px;
-  height: 50px;
   font-family: 'code-39';
   font-size: 24px;
 }
@@ -38,10 +36,8 @@
 }
 
 .sysid {
-  width: 400px;
-  height: 120px;
   font-family: 'droid-sans-mono';
-  font-size: 96px;
+  font-size: 140px;
   text-align: center;
   text-transform: uppercase;
 }
@@ -51,6 +47,7 @@
 }
 
 .block {
+  width: 600px;
   margin: 20px;
 }
     </style>
@@ -89,6 +86,7 @@ document.addEventListener('DOMContentLoaded', (e) => {
         break;
       }
       barcodes.push(barcode);
+      barcode.innerText = '**';
     }
     sysid.addEventListener('input', (e) => {
       let barcodeText = '*' + sysid.innerText.toUpperCase() + '*';
