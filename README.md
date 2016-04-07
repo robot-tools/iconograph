@@ -121,7 +121,7 @@ systemid.py.
 Use the build_image.py flag:
 
 ```bash
---module="server/modules/certclient.py --server=https://certserver/ --ca-cert=/path/to/server/cert.pem --client-cert=/path/to/client/cert.pem --client-key=/path/to/client/key.pem --tag=www --subject='/C=US/ST=California/O=XXXX/OU=XXXX Test/CN=HOSTNAME'"
+--module="server/modules/certclient.py --server=https://certserver/ --ca-cert=/path/to/server/cert.pem --client-cert=/path/to/client/cert.pem --client-key=/path/to/client/key.pem --tag=www --subject='/C=US/ST=California/O=XXXX/OU=XXXX Test/CN=SYSTEMID'"
 ```
 
 The new key and cert are saved to /systemid
@@ -130,7 +130,7 @@ The new key and cert are saved to /systemid
 used more than once with different servers (e.g. once for an HTTPS client
 key/cert pair, and once for an EAP-TLS key/cert pair).
 
-`--subject` specifics the subject string passed to openssl. `HOSTNAME` is
+`--subject` specifics the subject string passed to openssl. `SYSTEMID` is
 replaced with the system hostname, possibly as set by systemid.py
 
 ### iconograph.py
