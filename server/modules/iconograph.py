@@ -23,6 +23,10 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
+    '--https-ca-cert',
+    dest='https_ca_cert',
+    action='store')
+parser.add_argument(
     '--max-images',
     dest='max_images',
     action='store',
@@ -59,6 +63,12 @@ def main():
   shutil.copyfile(
       FLAGS.ca_cert,
       os.path.join(FLAGS.chroot_path, 'icon', 'config', 'ca.image.cert.pem'))
+
+  if FLAGS.https_ca_cert:
+    shutil.copyfile(
+        FLAGS.https_ca_cert,
+        os.path.join(FLAGS.chroot_path, 'icon', 'config', 'ca.www.cert.pem'))
+
 
   path = os.path.join(FLAGS.chroot_path, 'icon', 'config', 'fetcher.flags')
   with open(path, 'w') as fh:
