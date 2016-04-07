@@ -105,17 +105,25 @@ start on systemid-ready
 script
   exec </dev/tty8 >/dev/tty8 2>&1
   chvt 8
+
   KEY="/systemid/$(hostname).%(tag)s.key.pem"
   CERT="/systemid/$(hostname).%(tag)s.cert.pem"
   SUBJECT="$(echo '%(subject)s' | sed s/SYSTEMID/$(hostname)/g)"
-  openssl ecparam -name secp384r1 -genkey | openssl ec -out "${KEY}"
-  chmod 0400 "${KEY}"
-  chvt 8
 
+  if test ! -e "${KEY}"; then
+    openssl ecparam -name secp384r1 -genkey | openssl ec -out "${KEY}"
+    chmod 0400 "${KEY}"
+  fi
+
+  chvt 8
   /icon/iconograph/client/wait_for_service.py --host=%(host)s --service=%(service)s
   chvt 8
-  openssl req -new -key "${KEY}" -subj "${SUBJECT}" | /icon/certserver/certclient.py --ca-cert=/icon/config/ca.%(tag)s.certserver.cert.pem --client-cert=/icon/config/client.%(tag)s.certserver.cert.pem --client-key=/icon/config/client.%(tag)s.certserver.key.pem --server=%(server)s > "${CERT}"
-  chmod 0444 "${CERT}"
+
+  if test ! -e "${CERT}"; then
+    openssl req -new -key "${KEY}" -subj "${SUBJECT}" | /icon/certserver/certclient.py --ca-cert=/icon/config/ca.%(tag)s.certserver.cert.pem --client-cert=/icon/config/client.%(tag)s.certserver.cert.pem --client-key=/icon/config/client.%(tag)s.certserver.key.pem --server=%(server)s > "${CERT}"
+    chmod 0444 "${CERT}"
+  fi
+
   chvt 8
 
   echo
