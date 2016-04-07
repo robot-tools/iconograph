@@ -109,23 +109,22 @@ def main():
     fh.write("""
 description "AutoImage"
 
-start on stopped rc RUNLEVEL=[2345]
-
-stop on runlevel [!2345]
+start on runlevel [2345]
 
 script
+  exec </dev/tty7 >/dev/tty7 2>&1
   chvt 7
-  /autoimage/client/wait_for_service.py --host=%(host)s --service=%(service)s </dev/tty7 >/dev/tty7 2>&1
+  /autoimage/client/wait_for_service.py --host=%(host)s --service=%(service)s
   chvt 7
-  /autoimage/imager/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/autoimage/config/ca.cert.pem --base-url=%(base_url)s %(image_flags)s </dev/tty7 >/dev/tty7 2>&1
+  /autoimage/imager/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/autoimage/config/ca.cert.pem --base-url=%(base_url)s %(image_flags)s
   chvt 7
 
-  echo >/dev/tty7
-  echo "==================" >/dev/tty7
-  echo "autoimage complete" >/dev/tty7
-  echo "==================" >/dev/tty7
+  echo
+  echo "=================="
+  echo "autoimage complete"
+  echo "=================="
 
-  /autoimage/client/alert.py --type=happy </dev/tty7 >/dev/tty7
+  /autoimage/client/alert.py --type=happy
 end script
 """ % {
       'host': parsed.hostname,
