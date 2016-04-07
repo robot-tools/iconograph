@@ -114,7 +114,7 @@ to the server over HTTPS. This can be used to limit image availability.
 ### certclient.py
 
 Use a local master key/cert pair to authenticate to a
-[https://github.com/robot-tools/certserver](certserver) instance and retrieve
+[certserver](https://github.com/robot-tools/certserver) instance and retrieve
 a system-specific key. Mainly intended to be used with autoimage.py and
 systemid.py.
 
