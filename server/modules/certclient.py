@@ -62,30 +62,32 @@ def main():
       '--assume-yes',
       'git', 'python3-requests', 'openssl')
 
-  ExecChroot(
-      'git',
-      'clone',
-      'https://github.com/robot-tools/iconograph.git',
-      'certclient-icon')
+  os.makedirs(os.path.join(FLAGS.chroot_path, 'icon', 'config'), exist_ok=True)
 
-  ExecChroot(
-      'git',
-      'clone',
-      'https://github.com/robot-tools/certserver.git',
-      'certserver')
+  if not os.path.exists(os.path.join(FLAGS.chroot_path, 'icon', 'iconograph')):
+    ExecChroot(
+        'git',
+        'clone',
+        'https://github.com/robot-tools/iconograph.git',
+        'icon/iconograph')
 
-  os.mkdir(os.path.join(FLAGS.chroot_path, 'certclient-icon', 'config'))
+  if not os.path.exists(os.path.join(FLAGS.chroot_path, 'icon', 'certserver')):
+    ExecChroot(
+        'git',
+        'clone',
+        'https://github.com/robot-tools/certserver.git',
+        'icon/certserver')
 
-  ca_cert_path = os.path.join('certclient-icon', 'config', 'ca.%s.certserver.cert.pem' % FLAGS.tag)
+  ca_cert_path = os.path.join('icon', 'config', 'ca.%s.certserver.cert.pem' % FLAGS.tag)
   shutil.copyfile(
     FLAGS.ca_cert,
     os.path.join(FLAGS.chroot_path, ca_cert_path))
 
-  client_cert_path = os.path.join('certclient-icon', 'config', 'client.%s.certserver.cert.pem' % FLAGS.tag)
+  client_cert_path = os.path.join('icon', 'config', 'client.%s.certserver.cert.pem' % FLAGS.tag)
   shutil.copyfile(
     FLAGS.client_cert,
     os.path.join(FLAGS.chroot_path, client_cert_path))
-  client_key_path = os.path.join('certclient-icon', 'config', 'client.%s.certserver.key.pem' % FLAGS.tag)
+  client_key_path = os.path.join('icon', 'config', 'client.%s.certserver.key.pem' % FLAGS.tag)
   shutil.copyfile(
     FLAGS.client_key,
     os.path.join(FLAGS.chroot_path, client_key_path))
@@ -110,9 +112,9 @@ script
   chmod 0400 "${KEY}"
   chvt 8
 
-  /certclient-icon/client/wait_for_service.py --host=%(host)s --service=%(service)s
+  /icon/iconograph/client/wait_for_service.py --host=%(host)s --service=%(service)s
   chvt 8
-  openssl req -new -key "${KEY}" -subj "${SUBJECT}" | /certserver/certclient.py --ca-cert=/certclient-icon/config/ca.%(tag)s.certserver.cert.pem --client-cert=/certclient-icon/config/client.%(tag)s.certserver.cert.pem --client-key=/certclient-icon/config/client.%(tag)s.certserver.key.pem --server=%(server)s > "${CERT}"
+  openssl req -new -key "${KEY}" -subj "${SUBJECT}" | /icon/certserver/certclient.py --ca-cert=/icon/config/ca.%(tag)s.certserver.cert.pem --client-cert=/icon/config/client.%(tag)s.certserver.cert.pem --client-key=/icon/config/client.%(tag)s.certserver.key.pem --server=%(server)s > "${CERT}"
   chmod 0444 "${CERT}"
   chvt 8
 

@@ -47,17 +47,20 @@ def main():
       '--assume-yes',
       'daemontools-run', 'git', 'python3-openssl')
 
-  ExecChroot(
-      'git',
-      'clone',
-      'https://github.com/robot-tools/iconograph.git')
+  os.makedirs(os.path.join(FLAGS.chroot_path, 'icon', 'config'), exist_ok=True)
 
-  os.mkdir(os.path.join(FLAGS.chroot_path, 'iconograph', 'config'))
+  if not os.path.exists(os.path.join(FLAGS.chroot_path, 'icon', 'iconograph')):
+    ExecChroot(
+        'git',
+        'clone',
+        'https://github.com/robot-tools/iconograph.git',
+        'icon/iconograph')
+
   shutil.copyfile(
       FLAGS.ca_cert,
-      os.path.join(FLAGS.chroot_path, 'iconograph', 'config', 'ca.cert.pem'))
+      os.path.join(FLAGS.chroot_path, 'icon', 'config', 'ca.image.cert.pem'))
 
-  path = os.path.join(FLAGS.chroot_path, 'iconograph', 'client', 'flags')
+  path = os.path.join(FLAGS.chroot_path, 'icon', 'config', 'fetcher.flags')
   with open(path, 'w') as fh:
     fh.write('--base-url=%(base_url)s --max-images=%(max_images)d\n' % {
       'base_url': FLAGS.base_url,
@@ -65,8 +68,8 @@ def main():
     })
 
   os.symlink(
-      '/iconograph/client',
-      os.path.join(FLAGS.chroot_path, 'etc', 'service', 'iconograph'))
+      '/icon/iconograph/client',
+      os.path.join(FLAGS.chroot_path, 'etc', 'service', 'iconograph-client'))
 
 
 if __name__ == '__main__':

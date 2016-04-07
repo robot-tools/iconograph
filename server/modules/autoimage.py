@@ -65,21 +65,23 @@ def main():
       '--assume-yes',
       'git', 'grub-pc', 'python3-openssl', 'python3-requests')
 
-  ExecChroot(
-      'git',
-      'clone',
-      'https://github.com/robot-tools/iconograph.git',
-      'autoimage')
+  os.makedirs(os.path.join(FLAGS.chroot_path, 'icon', 'config'), exist_ok=True)
 
-  os.mkdir(os.path.join(FLAGS.chroot_path, 'autoimage', 'config'))
+  if not os.path.exists(os.path.join(FLAGS.chroot_path, 'icon', 'iconograph')):
+    ExecChroot(
+        'git',
+        'clone',
+        'https://github.com/robot-tools/iconograph.git',
+        'icon/iconograph')
+
   shutil.copyfile(
       FLAGS.ca_cert,
-      os.path.join(FLAGS.chroot_path, 'autoimage', 'config', 'ca.cert.pem'))
+      os.path.join(FLAGS.chroot_path, 'icon', 'config', 'ca.image.cert.pem'))
 
   image_flags = []
 
   if FLAGS.https_ca_cert:
-    https_ca_cert_path = os.path.join('autoimage', 'config', 'ca.https.cert.pem')
+    https_ca_cert_path = os.path.join('icon', 'config', 'ca.https.cert.pem')
     shutil.copyfile(
       FLAGS.https_ca_cert,
       os.path.join(FLAGS.chroot_path, https_ca_cert_path))
@@ -88,11 +90,11 @@ def main():
     ])
 
   if FLAGS.https_client_cert and FLAGS.https_client_key:
-    https_client_cert_path = os.path.join('autoimage', 'config', 'client.https.cert.pem')
+    https_client_cert_path = os.path.join('icon', 'config', 'client.https.cert.pem')
     shutil.copyfile(
       FLAGS.https_client_cert,
       os.path.join(FLAGS.chroot_path, https_client_cert_path))
-    https_client_key_path = os.path.join('autoimage', 'config', 'client.https.key.pem')
+    https_client_key_path = os.path.join('icon', 'config', 'client.https.key.pem')
     shutil.copyfile(
       FLAGS.https_client_key,
       os.path.join(FLAGS.chroot_path, https_client_key_path))
@@ -114,9 +116,9 @@ start on runlevel [2345]
 script
   exec </dev/tty7 >/dev/tty7 2>&1
   chvt 7
-  /autoimage/client/wait_for_service.py --host=%(host)s --service=%(service)s
+  /icon/iconograph/client/wait_for_service.py --host=%(host)s --service=%(service)s
   chvt 7
-  /autoimage/imager/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/autoimage/config/ca.cert.pem --base-url=%(base_url)s %(image_flags)s
+  /icon/iconograph/imager/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/icon/config/ca.image.cert.pem --base-url=%(base_url)s %(image_flags)s
   chvt 7
 
   echo
@@ -124,7 +126,7 @@ script
   echo "autoimage complete"
   echo "=================="
 
-  /autoimage/client/alert.py --type=happy
+  /icon/iconograph/client/alert.py --type=happy
 end script
 """ % {
       'host': parsed.hostname,
