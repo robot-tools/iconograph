@@ -111,6 +111,28 @@ which is used to validate the manifest.json signature.
 local paths to a PEM-encoded certificate and key pair that will be provided
 to the server over HTTPS. This can be used to limit image availability.
 
+### certclient.py
+
+Use a local master key/cert pair to authenticate to a
+[https://github.com/robot-tools/certserver](certserver) instance and retrieve
+a system-specific key. Mainly intended to be used with autoimage.py and
+systemid.py.
+
+Use the build_image.py flag:
+
+```bash
+--module="server/modules/certclient.py --server=https://certserver/ --ca-cert=/path/to/server/cert.pem --client-cert=/path/to/client/cert.pem --client-key=/path/to/client/key.pem --tag=www --subject='/C=US/ST=California/O=XXXX/OU=XXXX Test/CN=HOSTNAME'"
+```
+
+The new key and cert are saved to /systemid
+
+`--tag` specifies a value added to the filename, so certclient.py can be
+used more than once with different servers (e.g. once for an HTTPS client
+key/cert pair, and once for an EAP-TLS key/cert pair).
+
+`--subject` specifics the subject string passed to openssl. `HOSTNAME` is
+replaced with the system hostname, possibly as set by systemid.py
+
 ### iconograph.py
 
 Install icon inside the image. This allows the image to auto-update over HTTP.
@@ -149,6 +171,9 @@ Mount a /systemid partition from a filesystem with LABEL=SYSTEMID. This is
 intended to a be separate device (possibly a USB flash drive, SD card, etc.)
 which contains data that persists across re-images and identifies the system,
 including system-specific keys and certificates.
+
+It also sets the hostname to the value found in the systemid config on the
+device.
 
 ```bash
 --module="server/modules/systemid.py"
