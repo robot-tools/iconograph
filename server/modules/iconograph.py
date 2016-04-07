@@ -49,7 +49,7 @@ def main():
       'apt-get',
       'install',
       '--assume-yes',
-      'daemontools-run', 'git', 'python3-openssl')
+      'daemontools-run', 'git', 'python3-openssl', 'python3-requests')
 
   os.makedirs(os.path.join(FLAGS.chroot_path, 'icon', 'config'), exist_ok=True)
 
