@@ -84,6 +84,33 @@ flags to build_image.py as long as the modules are compatible with each other.
 
 Stock modules:
 
+### autoimage.py
+
+Build an image that will partition, mkfs, and install an image from a different
+URL onto a target system. Used to create install USB drives, PXE boot, etc.
+Use the build_image.py flag:
+
+```bash
+--module="server/modules/autoimage.py --base-url=http://yourhost/ --ca-cert=/path/to/signing/cert.pem --device=/dev/sdx --persistent-percent=50"
+```
+
+`--device` specifies the device to partition and install to on the target
+system.
+
+Optional flags:
+
+`--persistent-percent`, if non-zero, specifies the percent of the target
+device to allocate to a LABEL=PERSISTENT filesystem. If the inner image uses
+persistent.py, this filesystem will be automatically mounted.
+
+`--https-ca-cert` specifies a local path to a PEM-encoded certificate to
+validate the HTTPS image server cert against. This differs from `--ca-cert`,
+which is used to validate the manifest.json signature.
+
+`--https-client-cert` and `--https-client-key` are used together to specify
+local paths to a PEM-encoded certificate and key pair that will be provided
+to the server over HTTPS. This can be used to limit image availability.
+
 ### iconograph.py
 
 Install icon inside the image. This allows the image to auto-update over HTTP.
@@ -94,6 +121,10 @@ Use the build_image.py flag:
 ```
 
 Optional flags:
+
+`--https-ca-cert` specifies a local path to a PEM-encoded certificate to
+validate the HTTPS image server cert against. This differs from `--ca-cert`,
+which is used to validate the manifest.json signature.
 
 `--max-images` sets the number of recent images to keep. Older images are
 deleted. Defaults to 5. 0 means unlimited.
@@ -108,22 +139,20 @@ Use the build_image.py flag:
 --module="server/modules/persistent.py"
 ```
 
-### autoimage.py
+See [imager/image.py](imager/image.py)'s or
+[server/module/autoimage.py](autoimage.py)'s `--persistent-percent` flag to
+create this partition.
 
-Build an image that will partition, mkfs, and install an image from a different
-URL onto a target system. Used to create install USB drives, PXE boot, etc.
-Use the build_image.py flag:
+### systemid.py
+
+Mount a /systemid partition from a filesystem with LABEL=SYSTEMID. This is
+intended to a be separate device (possibly a USB flash drive, SD card, etc.)
+which contains data that persists across re-images and identifies the system,
+including system-specific keys and certificates.
 
 ```bash
---module="server/modules/autoimage.py --base-url=http://yourhost/ --ca-cert=/path/to/signing/cert.pem --device=/dev/sdx --persistent-percent=50"
+--module="server/modules/systemid.py"
 ```
-
-`--device` specifies the device to partition and install to on the target
-system.
-
-`--persistent-percent`, if non-zero, specifies the percent of the target
-device to allocate to a LABEL=PERSISTENT filesystem. If the inner image uses
-persistent.py, this filesystem will be automatically mounted.
 
 ## Module API
 
@@ -184,3 +213,13 @@ or manually write them to a drive. To do so:
 # Needs sudo to partition and mkfs devices
 sudo imager/image.py --base-url=http://yourhost/ --ca-cert=/path/to/signing/cert.pem --device=/dev/sdx --persistent-percent=50
 ```
+
+Optional flags:
+
+`--https-ca-cert` specifies a local path to a PEM-encoded certificate to
+validate the HTTPS image server cert against. This differs from `--ca-cert`,
+which is used to validate the manifest.json signature.
+
+`--https-client-cert` and `--https-client-key` are used together to specify
+local paths to a PEM-encoded certificate and key pair that will be provided
+to the server over HTTPS. This can be used to limit image availability.
