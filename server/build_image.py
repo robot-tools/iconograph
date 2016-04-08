@@ -116,8 +116,8 @@ class ImageBuilder(object):
     self._umount.append(root)
     return root
 
-  def _MountProc(self, root):
-    path = os.path.join(root, 'proc')
+  def _MountProc(self, chroot_path):
+    path = os.path.join(chroot_path, 'proc')
     self._Exec(
         'mount',
         '--types', 'proc',
@@ -245,6 +245,12 @@ class ImageBuilder(object):
          source)
     os.unlink(os.path.join(chroot_path, 'usr', 'sbin', 'policy-rc.d'))
 
+  def _Unmount(self, path):
+    self._Exec(
+        'umount',
+        path)
+    self._umount.remove(path)
+
   def _Squash(self, chroot_path, union_path):
     self._Exec(
         'mksquashfs',
@@ -273,7 +279,7 @@ class ImageBuilder(object):
 
     chroot_path = self._Debootstrap(root)
     union_path = self._CreateUnion(root)
-    self._MountProc(chroot_path)
+    proc_path = self._MountProc(chroot_path)
     self._FixSourcesList(chroot_path)
     self._AddDiversions(chroot_path)
     self._InstallPackages(chroot_path)
@@ -285,6 +291,7 @@ class ImageBuilder(object):
     self._RemoveDiversions(chroot_path)
     if FLAGS.post_module_shell:
       self._Exec('bash', cwd=root)
+    self._Unmount(proc_path)
     self._Squash(chroot_path, union_path)
     self._CopyISOFiles(union_path)
     iso_path = self._CreateISO(union_path, timestamp)
