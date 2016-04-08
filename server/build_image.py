@@ -35,8 +35,13 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
-    '--shell',
-    dest='shell',
+    '--post-module-shell',
+    dest='post_module_shell',
+    action='store_true',
+    default=False)
+parser.add_argument(
+    '--pre-module-shell',
+    dest='pre_module_shell',
     action='store_true',
     default=False)
 parser.add_argument(
@@ -99,6 +104,27 @@ class ImageBuilder(object):
 
   def _ExecChroot(self, chroot_path, *args, **kwargs):
     self._Exec('chroot', chroot_path, *args, **kwargs)
+
+  def _CreateRoot(self, timestamp):
+    root = tempfile.mkdtemp()
+    self._rmtree.append(root)
+    self._Exec(
+        'mount',
+        '--types', 'tmpfs',
+        'none',
+        root)
+    self._umount.append(root)
+    return root
+
+  def _MountProc(self, root):
+    path = os.path.join(root, 'proc')
+    self._Exec(
+        'mount',
+        '--types', 'proc',
+        'none',
+        path)
+    self._umount.append(path)
+    return path
 
   def _Debootstrap(self, root):
     path = os.path.join(root, 'chroot')
@@ -241,30 +267,23 @@ class ImageBuilder(object):
     return dest_iso
 
   def _BuildImage(self):
-    root = tempfile.mkdtemp()
-    self._rmtree.append(root)
-
     timestamp = int(time.time())
-
+    root = self._CreateRoot(timestamp)
     print('Building image in:', root)
-
-    self._Exec(
-        'mount',
-        '--types', 'tmpfs',
-        'none',
-        root)
-    self._umount.append(root)
 
     chroot_path = self._Debootstrap(root)
     union_path = self._CreateUnion(root)
+    self._MountProc(chroot_path)
     self._FixSourcesList(chroot_path)
     self._AddDiversions(chroot_path)
     self._InstallPackages(chroot_path)
     self._WriteVersion(chroot_path, timestamp)
+    if FLAGS.pre_module_shell:
+      self._Exec('bash', cwd=root)
     self._RunModules(chroot_path)
     self._CleanPackages(chroot_path)
     self._RemoveDiversions(chroot_path)
-    if FLAGS.shell:
+    if FLAGS.post_module_shell:
       self._Exec('bash', cwd=root)
     self._Squash(chroot_path, union_path)
     self._CopyISOFiles(union_path)
