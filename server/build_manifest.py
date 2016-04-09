@@ -43,14 +43,14 @@ class ManifestBuilder(object):
     self._image_dir = image_dir
     self._old_manifest = old_manifest
 
-  def _Rollouts(self):
+  def _OldImages(self):
     if not self._old_manifest:
       return {}
     try:
       with open(self._old_manifest, 'r') as fh:
         parsed = json.load(fh)
         return dict(
-            (image['timestamp'], image['rollout_‱'])
+            (image['timestamp'], image)
             for image in parsed['images'])
     except FileNotFoundError:
       return {}
@@ -60,7 +60,7 @@ class ManifestBuilder(object):
         'timestamp': int(time.time()),
         'images': [],
     }
-    rollouts = self._Rollouts()
+    old_images = self._OldImages()
     for filename in os.listdir(self._image_dir):
       match = self._FILE_REGEX.match(filename)
       if not match:
@@ -68,8 +68,15 @@ class ManifestBuilder(object):
       timestamp = int(match.group('timestamp'))
       image = {
           'timestamp': timestamp,
-          'rollout_‱': rollouts.get(timestamp, FLAGS.default_rollout),
+          'rollout_‱': FLAGS.default_rollout,
       }
+      ret['images'].append(image)
+
+      old_image = old_images.get(timestamp)
+      if old_image:
+        image.update(old_image)
+        continue
+
       with open(os.path.join(self._image_dir, filename), 'rb') as fh:
         hash_obj = hashlib.sha256()
         while True:
@@ -78,7 +85,7 @@ class ManifestBuilder(object):
             break
           hash_obj.update(data)
         image['hash'] = hash_obj.hexdigest()
-      ret['images'].append(image)
+
     ret['images'].sort(key=lambda x: x['timestamp'], reverse=True)
     return ret
 
