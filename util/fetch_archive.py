@@ -48,7 +48,7 @@ class ArchiveFetcher(object):
     resp = self._session.get(url, stream=True)
 
     tar = subprocess.Popen(
-        ['tar', '--extract', '--verbose'],
+        ['tar', '--extract'],
         stdin=subprocess.PIPE,
         cwd=dest_dir)
     for data in resp.iter_content(self._BUF_SIZE):
