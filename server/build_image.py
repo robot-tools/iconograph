@@ -60,7 +60,6 @@ class ImageBuilder(object):
     'iputils-ping',
     'linux-firmware',
     'linux-firmware-nonfree',
-    'openssh-server',
     'ubuntu-minimal',
     'ubuntu-standard',
     'user-setup',
