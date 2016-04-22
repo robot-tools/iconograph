@@ -26,6 +26,10 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
+    '--kernel-arg',
+    dest='kernel_args',
+    action='append')
+parser.add_argument(
     '--module',
     dest='modules',
     action='append')
@@ -87,13 +91,14 @@ class ImageBuilder(object):
     'loopback.cfg': 'boot/grub/loopback.cfg',
   }
 
-  def __init__(self, source_iso, image_dir, archive, arch, release, modules):
+  def __init__(self, source_iso, image_dir, archive, arch, release, modules, kernel_args):
     self._source_iso = source_iso
     self._image_dir = image_dir
     self._archive = archive
     self._arch = arch
     self._release = release
     self._modules = modules or []
+    self._kernel_args = kernel_args or []
 
     self._ico_server_path = os.path.dirname(sys.argv[0])
 
@@ -259,9 +264,11 @@ class ImageBuilder(object):
 
   def _CopyISOFiles(self, union_path):
     for source, dest in self._ISO_COPIES.items():
-      shutil.copyfile(
-          os.path.join(self._ico_server_path, 'iso_files', source),
-          os.path.join(union_path, dest))
+      source_path = os.path.join(self._ico_server_path, 'iso_files', source)
+      dest_path = os.path.join(union_path, dest)
+      with open(source_path, 'r') as source_fh, open(dest_path, 'w') as dest_fh:
+        for line in source_fh:
+          dest_fh.write(line.replace('$KERNEL_ARGS', ' '.join(self._kernel_args)))
 
   def _CreateISO(self, union_path, timestamp):
     dest_iso = os.path.join(self._image_dir, '%d.iso' % timestamp)
@@ -322,7 +329,8 @@ def main():
       FLAGS.archive,
       FLAGS.arch,
       FLAGS.release,
-      FLAGS.modules)
+      FLAGS.modules,
+      FLAGS.kernel_args)
   builder.BuildImage()
 
 
