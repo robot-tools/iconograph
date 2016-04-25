@@ -22,6 +22,9 @@ def main():
 description "Mount /systemid"
 
 start on filesystem
+task
+
+emits systemid-ready
 
 script
   mount LABEL=SYSTEMID /systemid
@@ -29,6 +32,7 @@ script
   echo ${SYSTEMID} > /etc/hostname
   hostname --file /etc/hostname
   grep ${SYSTEMID} /etc/hosts >/dev/null || echo "127.0.2.1 ${SYSTEMID}" >> /etc/hosts
+  initctl emit --no-wait systemid-ready
 end script
 """)
 

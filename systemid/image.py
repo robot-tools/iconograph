@@ -121,6 +121,14 @@ SYSTEMID=%(system_id)s
         'system_id': new_id,
       })
 
+  def _GenerateSSHKey(self, root):
+    self._Exec(
+        'ssh-keygen',
+        '-f', os.path.join(root, 'ssh_host_ed25519_key'),
+        '-N', '',
+        '-t', 'ed25519',
+    )
+
   def _Image(self):
     self._PartitionAndMkFS()
     root = self._Mount()
@@ -136,6 +144,7 @@ New ID: \033[91m%s\033[00m
 ==============
 
 """ % new_id)
+    self._GenerateSSHKey(root)
 
   def Image(self):
     self._umount = []

@@ -1,0 +1,101 @@
+<html>
+	<head>
+		<title>SystemID</title>
+    <script src="https://use.typekit.net/hsz4ulo.js"></script>
+    <script>try{Typekit.load({ async: true });}catch(e){}</script>
+    <style>
+@font-face {
+  font-family: 'code-39';
+  src: url('code-39.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.barcode {
+  font-family: 'code-39';
+  font-size: 24px;
+}
+
+.top {
+  text-align: left;
+}
+
+.bottom {
+  text-align: right;
+}
+
+[contenteditable=true]:empty::before{
+  content: attr(placeholder);
+  color: grey;
+}
+
+@media screen {
+.sysid {
+  border: 1px dashed #AAA;
+}
+}
+
+.sysid {
+  font-family: 'droid-sans-mono';
+  font-size: 140px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.sysid:focus {
+  outline: 0;
+}
+
+.block {
+  width: 600px;
+  margin: 20px;
+}
+    </style>
+  </head>
+  <body>
+    <div class="block">
+      <div id="barcode0.0" class="top barcode"></div>
+      <div id="sysid0" class="sysid" contenteditable="true" placeholder="SYSID#"></div>
+      <div id="barcode0.1" class="bottom barcode"></div>
+    </div>
+
+    <div class="block">
+      <div id="barcode1.0" class="top barcode"></div>
+      <div id="sysid1" class="sysid" contenteditable="true" placeholder="SYSID#"></div>
+      <div id="barcode1.1" class="bottom barcode"></div>
+    </div>
+
+    <div class="block">
+      <div id="barcode2.0" class="top barcode"></div>
+      <div id="sysid2" class="sysid" contenteditable="true" placeholder="SYSID#"></div>
+      <div id="barcode2.1" class="bottom barcode"></div>
+    </div>
+
+    <script>
+"use strict";
+document.addEventListener('DOMContentLoaded', (e) => {
+  for (let i = 0; true; i++) {
+    let sysid = document.getElementById('sysid' + i);
+    if (!sysid) {
+      break;
+    }
+    let barcodes = [];
+    for (let j = 0; true; j++) {
+      let barcode = document.getElementById('barcode' + i + '.' + j);
+      if (!barcode) {
+        break;
+      }
+      barcodes.push(barcode);
+      barcode.innerText = '**';
+    }
+    sysid.addEventListener('input', (e) => {
+      let barcodeText = '*' + sysid.innerText.toUpperCase() + '*';
+      barcodes.forEach((barcode) => {
+        barcode.innerText = barcodeText;
+      });
+    });
+  }
+});
+    </script>
+  </body>
+</html>

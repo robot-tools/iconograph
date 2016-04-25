@@ -29,6 +29,18 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
+    '--https-ca-cert',
+    dest='https_ca_cert',
+    action='store')
+parser.add_argument(
+    '--https-client-cert',
+    dest='https_client_cert',
+    action='store')
+parser.add_argument(
+    '--https-client-key',
+    dest='https_client_key',
+    action='store')
+parser.add_argument(
     '--persistent-percent',
     dest='persistent_percent',
     action='store',
@@ -51,18 +63,46 @@ def main():
       'apt-get',
       'install',
       '--assume-yes',
-      'git', 'grub-pc', 'python3-openssl')
+      'git', 'grub-pc', 'python3-openssl', 'python3-requests')
 
-  ExecChroot(
-      'git',
-      'clone',
-      'https://github.com/robot-tools/iconograph.git',
-      'autoimage')
+  os.makedirs(os.path.join(FLAGS.chroot_path, 'icon', 'config'), exist_ok=True)
 
-  os.mkdir(os.path.join(FLAGS.chroot_path, 'autoimage', 'config'))
+  if not os.path.exists(os.path.join(FLAGS.chroot_path, 'icon', 'iconograph')):
+    ExecChroot(
+        'git',
+        'clone',
+        'https://github.com/robot-tools/iconograph.git',
+        'icon/iconograph')
+
   shutil.copyfile(
       FLAGS.ca_cert,
-      os.path.join(FLAGS.chroot_path, 'autoimage', 'config', 'ca.cert.pem'))
+      os.path.join(FLAGS.chroot_path, 'icon', 'config', 'ca.image.cert.pem'))
+
+  image_flags = []
+
+  if FLAGS.https_ca_cert:
+    https_ca_cert_path = os.path.join('icon', 'config', 'ca.www.cert.pem')
+    shutil.copyfile(
+      FLAGS.https_ca_cert,
+      os.path.join(FLAGS.chroot_path, https_ca_cert_path))
+    image_flags.extend([
+        '--https-ca-cert', os.path.join('/', https_ca_cert_path),
+    ])
+
+  if FLAGS.https_client_cert and FLAGS.https_client_key:
+    https_client_cert_path = os.path.join('icon', 'config', 'client.www.cert.pem')
+    shutil.copyfile(
+      FLAGS.https_client_cert,
+      os.path.join(FLAGS.chroot_path, https_client_cert_path))
+    https_client_key_path = os.path.join('icon', 'config', 'client.www.key.pem')
+    shutil.copyfile(
+      FLAGS.https_client_key,
+      os.path.join(FLAGS.chroot_path, https_client_key_path))
+    os.chmod(os.path.join(FLAGS.chroot_path, https_client_key_path), 0o400)
+    image_flags.extend([
+        '--https-client-cert', os.path.join('/', https_client_cert_path),
+        '--https-client-key', os.path.join('/', https_client_key_path),
+    ])
 
   parsed = parse.urlparse(FLAGS.base_url)
 
@@ -71,23 +111,22 @@ def main():
     fh.write("""
 description "AutoImage"
 
-start on stopped rc RUNLEVEL=[2345]
-
-stop on runlevel [!2345]
+start on runlevel [2345]
 
 script
-  chvt 7
-  /autoimage/client/wait_for_service.py --host=%(host)s --service=%(service)s </dev/tty7 >/dev/tty7 2>&1
-  chvt 7
-  /autoimage/imager/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/autoimage/config/ca.cert.pem --base-url=%(base_url)s </dev/tty7 >/dev/tty7 2>&1
-  chvt 7
+  exec </dev/tty8 >/dev/tty8 2>&1
+  chvt 8
+  /icon/iconograph/client/wait_for_service.py --host=%(host)s --service=%(service)s
+  chvt 8
+  /icon/iconograph/imager/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/icon/config/ca.image.cert.pem --base-url=%(base_url)s %(image_flags)s
+  chvt 8
 
-  echo >/dev/tty7
-  echo "==================" >/dev/tty7
-  echo "autoimage complete" >/dev/tty7
-  echo "==================" >/dev/tty7
+  echo
+  echo "=================="
+  echo "autoimage complete"
+  echo "=================="
 
-  /autoimage/client/alert.py --type=happy </dev/tty7 >/dev/tty7
+  /icon/iconograph/client/alert.py --type=happy
 end script
 """ % {
       'host': parsed.hostname,
@@ -95,6 +134,7 @@ end script
       'device': FLAGS.device,
       'persistent_percent': FLAGS.persistent_percent,
       'base_url': FLAGS.base_url,
+      'image_flags': ' '.join(image_flags),
     })
 
 

@@ -22,9 +22,13 @@ def main():
 description "Mount /persistent"
 
 start on filesystem
+task
+
+emits persistent-ready
 
 script
   mount LABEL=PERSISTENT /persistent
+  initctl emit --no-wait persistent-ready
 end script
 """)
 

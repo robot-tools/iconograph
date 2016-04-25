@@ -26,6 +26,10 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
+    '--kernel-arg',
+    dest='kernel_args',
+    action='append')
+parser.add_argument(
     '--module',
     dest='modules',
     action='append')
@@ -35,8 +39,13 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
-    '--shell',
-    dest='shell',
+    '--post-module-shell',
+    dest='post_module_shell',
+    action='store_true',
+    default=False)
+parser.add_argument(
+    '--pre-module-shell',
+    dest='pre_module_shell',
     action='store_true',
     default=False)
 parser.add_argument(
@@ -55,7 +64,6 @@ class ImageBuilder(object):
     'iputils-ping',
     'linux-firmware',
     'linux-firmware-nonfree',
-    'openssh-server',
     'ubuntu-minimal',
     'ubuntu-standard',
     'user-setup',
@@ -83,13 +91,14 @@ class ImageBuilder(object):
     'loopback.cfg': 'boot/grub/loopback.cfg',
   }
 
-  def __init__(self, source_iso, image_dir, archive, arch, release, modules):
+  def __init__(self, source_iso, image_dir, archive, arch, release, modules, kernel_args):
     self._source_iso = source_iso
     self._image_dir = image_dir
     self._archive = archive
     self._arch = arch
     self._release = release
     self._modules = modules or []
+    self._kernel_args = kernel_args or []
 
     self._ico_server_path = os.path.dirname(sys.argv[0])
 
@@ -99,6 +108,27 @@ class ImageBuilder(object):
 
   def _ExecChroot(self, chroot_path, *args, **kwargs):
     self._Exec('chroot', chroot_path, *args, **kwargs)
+
+  def _CreateRoot(self, timestamp):
+    root = tempfile.mkdtemp()
+    self._rmtree.append(root)
+    self._Exec(
+        'mount',
+        '--types', 'tmpfs',
+        'none',
+        root)
+    self._umount.append(root)
+    return root
+
+  def _MountProc(self, chroot_path):
+    path = os.path.join(chroot_path, 'proc')
+    self._Exec(
+        'mount',
+        '--types', 'proc',
+        'none',
+        path)
+    self._umount.append(path)
+    return path
 
   def _Debootstrap(self, root):
     path = os.path.join(root, 'chroot')
@@ -219,6 +249,12 @@ class ImageBuilder(object):
          source)
     os.unlink(os.path.join(chroot_path, 'usr', 'sbin', 'policy-rc.d'))
 
+  def _Unmount(self, path):
+    self._Exec(
+        'umount',
+        path)
+    self._umount.remove(path)
+
   def _Squash(self, chroot_path, union_path):
     self._Exec(
         'mksquashfs',
@@ -228,9 +264,11 @@ class ImageBuilder(object):
 
   def _CopyISOFiles(self, union_path):
     for source, dest in self._ISO_COPIES.items():
-      shutil.copyfile(
-          os.path.join(self._ico_server_path, 'iso_files', source),
-          os.path.join(union_path, dest))
+      source_path = os.path.join(self._ico_server_path, 'iso_files', source)
+      dest_path = os.path.join(union_path, dest)
+      with open(source_path, 'r') as source_fh, open(dest_path, 'w') as dest_fh:
+        for line in source_fh:
+          dest_fh.write(line.replace('$KERNEL_ARGS', ' '.join(self._kernel_args)))
 
   def _CreateISO(self, union_path, timestamp):
     dest_iso = os.path.join(self._image_dir, '%d.iso' % timestamp)
@@ -241,31 +279,25 @@ class ImageBuilder(object):
     return dest_iso
 
   def _BuildImage(self):
-    root = tempfile.mkdtemp()
-    self._rmtree.append(root)
-
     timestamp = int(time.time())
-
+    root = self._CreateRoot(timestamp)
     print('Building image in:', root)
-
-    self._Exec(
-        'mount',
-        '--types', 'tmpfs',
-        'none',
-        root)
-    self._umount.append(root)
 
     chroot_path = self._Debootstrap(root)
     union_path = self._CreateUnion(root)
+    proc_path = self._MountProc(chroot_path)
     self._FixSourcesList(chroot_path)
     self._AddDiversions(chroot_path)
     self._InstallPackages(chroot_path)
     self._WriteVersion(chroot_path, timestamp)
+    if FLAGS.pre_module_shell:
+      self._Exec('bash', cwd=root)
     self._RunModules(chroot_path)
     self._CleanPackages(chroot_path)
     self._RemoveDiversions(chroot_path)
-    if FLAGS.shell:
+    if FLAGS.post_module_shell:
       self._Exec('bash', cwd=root)
+    self._Unmount(proc_path)
     self._Squash(chroot_path, union_path)
     self._CopyISOFiles(union_path)
     iso_path = self._CreateISO(union_path, timestamp)
@@ -297,7 +329,8 @@ def main():
       FLAGS.archive,
       FLAGS.arch,
       FLAGS.release,
-      FLAGS.modules)
+      FLAGS.modules,
+      FLAGS.kernel_args)
   builder.BuildImage()
 
 

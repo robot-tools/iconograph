@@ -23,6 +23,10 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
+    '--https-ca-cert',
+    dest='https_ca_cert',
+    action='store')
+parser.add_argument(
     '--max-images',
     dest='max_images',
     action='store',
@@ -45,19 +49,28 @@ def main():
       'apt-get',
       'install',
       '--assume-yes',
-      'daemontools-run', 'git', 'python3-openssl')
+      'daemontools-run', 'git', 'python3-openssl', 'python3-requests')
 
-  ExecChroot(
-      'git',
-      'clone',
-      'https://github.com/robot-tools/iconograph.git')
+  os.makedirs(os.path.join(FLAGS.chroot_path, 'icon', 'config'), exist_ok=True)
 
-  os.mkdir(os.path.join(FLAGS.chroot_path, 'iconograph', 'config'))
+  if not os.path.exists(os.path.join(FLAGS.chroot_path, 'icon', 'iconograph')):
+    ExecChroot(
+        'git',
+        'clone',
+        'https://github.com/robot-tools/iconograph.git',
+        'icon/iconograph')
+
   shutil.copyfile(
       FLAGS.ca_cert,
-      os.path.join(FLAGS.chroot_path, 'iconograph', 'config', 'ca.cert.pem'))
+      os.path.join(FLAGS.chroot_path, 'icon', 'config', 'ca.image.cert.pem'))
 
-  path = os.path.join(FLAGS.chroot_path, 'iconograph', 'client', 'flags')
+  if FLAGS.https_ca_cert:
+    shutil.copyfile(
+        FLAGS.https_ca_cert,
+        os.path.join(FLAGS.chroot_path, 'icon', 'config', 'ca.www.cert.pem'))
+
+
+  path = os.path.join(FLAGS.chroot_path, 'icon', 'config', 'fetcher.flags')
   with open(path, 'w') as fh:
     fh.write('--base-url=%(base_url)s --max-images=%(max_images)d\n' % {
       'base_url': FLAGS.base_url,
@@ -65,8 +78,8 @@ def main():
     })
 
   os.symlink(
-      '/iconograph/client',
-      os.path.join(FLAGS.chroot_path, 'etc', 'service', 'iconograph'))
+      '/icon/iconograph/client',
+      os.path.join(FLAGS.chroot_path, 'etc', 'service', 'iconograph-client'))
 
 
 if __name__ == '__main__':
