@@ -105,6 +105,7 @@ class Imager(object):
     with tempfile.NamedTemporaryFile(dir=self._db_dir, delete=False, mode='w') as fh:
       try:
         json.dump(db, fh)
+        fh.write('\n')
         fh.flush()
         os.rename(fh.name, db_path)
       except Exception:
