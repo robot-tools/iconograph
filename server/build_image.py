@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import json
 import os
 import shutil
 import subprocess
@@ -217,8 +218,10 @@ class ImageBuilder(object):
         *self._BASE_PACKAGES)
 
   def _WriteVersion(self, chroot_path, timestamp):
-    with open(os.path.join(chroot_path, 'etc', 'iconograph'), 'w') as fh:
-      fh.write('TIMESTAMP=%d\n' % timestamp)
+    with open(os.path.join(chroot_path, 'etc', 'iconograph.json'), 'w') as fh:
+      json.dump({
+        'timestamp': timestamp,
+      }, fh)
 
   def _RunModules(self, chroot_path):
     for module in self._modules:
