@@ -43,7 +43,7 @@ def main():
 
   if FLAGS.sudo:
     with open(os.path.join(FLAGS.chroot_path, 'etc', 'sudoers.d', FLAGS.username), 'w') as fh:
-      fh.write('%s\tALL=(ALL) NOPASSWD: ALL\n')
+      fh.write('%s\tALL=(ALL) NOPASSWD: ALL\n' % FLAGS.username)
 
   if FLAGS.authorized_keys_file:
     dest_dir = os.path.join(FLAGS.chroot_path, 'home', FLAGS.username, '.ssh')
