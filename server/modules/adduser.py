@@ -39,10 +39,11 @@ def ExecChroot(*args, **kwargs):
 
 def main():
   ExecChroot('adduser', '--system', '--group', '--disabled-password', 
-             FLAGS.username)
+             '--shell=/bin/bash', FLAGS.username)
 
   if FLAGS.sudo:
-    ExecChroot('usermod', '--append', '--groups', 'sudo', FLAGS.username)
+    with open(os.path.join(FLAGS.chroot_path, 'etc', 'sudoers.d', FLAGS.username), 'w') as fh:
+      fh.write('%s\tALL=(ALL) NOPASSWD: ALL\n')
 
   if FLAGS.authorized_keys_file:
     dest_dir = os.path.join(FLAGS.chroot_path, 'home', FLAGS.username, '.ssh')
