@@ -2,8 +2,11 @@
 
 import argparse
 import os
+import pyinotify
 from gevent import pywsgi
 import ssl
+import sys
+import threading
 
 
 parser = argparse.ArgumentParser(description='iconograph https_server')
@@ -41,7 +44,15 @@ parser.add_argument(
 FLAGS = parser.parse_args()
 
 
-class ImageRequestHandler(object):
+class INotifyHandler(pyinotify.ProcessEvent):
+  def process_IN_MOVED_TO(self, event):
+    if event.name != 'manifest.json':
+      return
+    image_type = os.path.basename(event.path)
+    print('new manifest: %r' % image_type)
+
+
+class HTTPRequestHandler(object):
 
   _MIME_TYPES = {
     '.iso': 'application/octet-stream',
@@ -89,15 +100,19 @@ class ImageRequestHandler(object):
     return
 
 
-class ImageServer(object):
+class Server(object):
 
   def __init__(self, listen_host, listen_port, server_key, server_cert, ca_cert, image_path):
 
-    self._handler = ImageRequestHandler(image_path)
+    wm = pyinotify.WatchManager()
+    inotify_handler = INotifyHandler()
+    self._notifier = pyinotify.Notifier(wm, inotify_handler)
+    wm.add_watch(image_path, pyinotify.IN_MOVED_TO, rec=True, auto_add=True)
 
+    http_handler = HTTPRequestHandler(image_path)
     self._httpd = pywsgi.WSGIServer(
         (listen_host, listen_port),
-        self._handler,
+        http_handler,
         keyfile=server_key,
         certfile=server_cert,
         ca_certs=ca_cert,
@@ -105,11 +120,14 @@ class ImageServer(object):
         ssl_version=ssl.PROTOCOL_TLSv1_2)
 
   def Serve(self):
+    self._notify_thread = threading.Thread(target=self._notifier.loop)
+    self._notify_thread.daemon = True
+    self._notify_thread.start()
     self._httpd.serve_forever()
 
 
 def main():
-  server = ImageServer(
+  server = Server(
       FLAGS.listen_host,
       FLAGS.listen_port,
       FLAGS.server_key,
