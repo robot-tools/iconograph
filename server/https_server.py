@@ -24,6 +24,11 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
+    '--image-type',
+    dest='image_types',
+    action='append',
+    required=True)
+parser.add_argument(
     '--listen-host',
     dest='listen_host',
     action='store',
@@ -83,8 +88,9 @@ class HTTPRequestHandler(object):
   }
   _BLOCK_SIZE = 2 ** 16
 
-  def __init__(self, image_path, websockets):
+  def __init__(self, image_path, image_types, websockets):
     self._image_path = image_path
+    self._image_types = image_types
     inner_handler = GetWebSocketHandler(websockets)
     self._websocket_handler = wsgiutils.WebSocketWSGIApplication(handler_cls=inner_handler)
 
@@ -110,6 +116,7 @@ class HTTPRequestHandler(object):
     image_name = os.path.basename(image_name)
     assert not image_type.startswith('.')
     assert not image_name.startswith('.')
+    assert image_type in self._image_types
 
     file_path = os.path.join(self._image_path, image_type, image_name)
     try:
@@ -129,15 +136,17 @@ class HTTPRequestHandler(object):
 
 class Server(object):
 
-  def __init__(self, listen_host, listen_port, server_key, server_cert, ca_cert, image_path):
+  def __init__(self, listen_host, listen_port, server_key, server_cert, ca_cert, image_path, image_types):
     websockets = set()
 
     wm = pyinotify.WatchManager()
     inotify_handler = INotifyHandler(websockets)
     self._notifier = pyinotify.Notifier(wm, inotify_handler)
-    wm.add_watch(image_path, pyinotify.IN_MOVED_TO, rec=True, auto_add=True)
+    for image_type in image_types:
+      type_path = os.path.join(image_path, image_type)
+      wm.add_watch(type_path, pyinotify.IN_MOVED_TO)
 
-    http_handler = HTTPRequestHandler(image_path, websockets)
+    http_handler = HTTPRequestHandler(image_path, image_types, websockets)
     self._httpd = geventserver.WSGIServer(
         (listen_host, listen_port),
         http_handler,
@@ -161,7 +170,8 @@ def main():
       FLAGS.server_key,
       FLAGS.server_cert,
       FLAGS.ca_cert,
-      FLAGS.image_path)
+      FLAGS.image_path,
+      set(FLAGS.image_types))
   server.Serve()
 
 
