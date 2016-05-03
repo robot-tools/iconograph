@@ -1,9 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
-import json
-from http import server
-import socket
+from gevent import pywsgi
 import ssl
 
 
@@ -37,33 +35,26 @@ parser.add_argument(
 FLAGS = parser.parse_args()
 
 
-class HTTPServer6(server.HTTPServer):
-  address_family = socket.AF_INET6
-
-
 class CertServer(object):
 
   def __init__(self, listen_host, listen_port, server_key, server_cert, ca_cert):
 
-    class RequestHandler(server.BaseHTTPRequestHandler):
-      def do_POST(self):
-        print('Request from: [%s]:%d' % (self.client_address[0], self.client_address[1]))
-        peer_cert = json.dumps(dict(x[0] for x in self.request.getpeercert()['subject']), sort_keys=True)
-        print('Client cert:\n\t%s' % peer_cert.replace('\n', '\n\t'))
-        size = int(self.headers['Content-Length'])
+    def HandleRequest(env, start_response):
+      print(env)
+      return
+      print('Request from: [%s]:%d' % (self.client_address[0], self.client_address[1]))
+      peer_cert = json.dumps(dict(x[0] for x in self.request.getpeercert()['subject']), sort_keys=True)
+      print('Client cert:\n\t%s' % peer_cert.replace('\n', '\n\t'))
+      size = int(self.headers['Content-Length'])
 
-        # XXX
-
-    self._httpd = HTTPServer6((listen_host, listen_port), RequestHandler)
-    self._httpd.socket = ssl.wrap_socket(
-        self._httpd.socket,
+    self._httpd = pywsgi.WSGIServer(
+        (listen_host, listen_port),
+        HandleRequest,
         keyfile=server_key,
         certfile=server_cert,
         ca_certs=ca_cert,
-        server_side=True,
         cert_reqs=ssl.CERT_REQUIRED,
         ssl_version=ssl.PROTOCOL_TLSv1_2)
-    self._httpd.socket.settimeout(5.0)
 
   def Serve(self):
     self._httpd.serve_forever()
