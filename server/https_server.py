@@ -1,12 +1,15 @@
 #!/usr/bin/python3
 
 import argparse
+import json
 import os
 import pyinotify
-from gevent import pywsgi
 import ssl
 import sys
 import threading
+from ws4py import websocket
+from ws4py.server import geventserver
+from ws4py.server import wsgiutils
 
 
 parser = argparse.ArgumentParser(description='iconograph https_server')
@@ -44,12 +47,32 @@ parser.add_argument(
 FLAGS = parser.parse_args()
 
 
+def GetWebSocketHandler(websockets):
+  class WebSocketHandler(websocket.WebSocket):
+    def opened(self):
+      websockets.add(self)
+
+    def closed(self, code, reason=None):
+      websockets.remove(self)
+
+  return WebSocketHandler
+
+
 class INotifyHandler(pyinotify.ProcessEvent):
+  def __init__(self, websockets):
+    self._websockets = websockets
+
   def process_IN_MOVED_TO(self, event):
     if event.name != 'manifest.json':
       return
     image_type = os.path.basename(event.path)
-    print('new manifest: %r' % image_type)
+    for websocket in self._websockets:
+      websocket.send(json.dumps({
+        'type': 'new_manifest',
+        'data': {
+          'image_type': image_type,
+        },
+      }), False)
 
 
 class HTTPRequestHandler(object):
@@ -60,14 +83,18 @@ class HTTPRequestHandler(object):
   }
   _BLOCK_SIZE = 2 ** 16
 
-  def __init__(self, image_path):
+  def __init__(self, image_path, websockets):
     self._image_path = image_path
+    inner_handler = GetWebSocketHandler(websockets)
+    self._websocket_handler = wsgiutils.WebSocketWSGIApplication(handler_cls=inner_handler)
 
   def __call__(self, env, start_response):
     path = env['PATH_INFO']
     if path.startswith('/image/'):
       image_type, image_name = path[7:].split('/', 1)
       return self._ServeImageFile(start_response, image_type, image_name)
+    elif path == '/ws':
+      return self._websocket_handler(env, start_response)
 
     start_response('404 Not found', [('Content-Type', 'text/plain')])
     return [b'Not found']
@@ -103,14 +130,15 @@ class HTTPRequestHandler(object):
 class Server(object):
 
   def __init__(self, listen_host, listen_port, server_key, server_cert, ca_cert, image_path):
+    websockets = set()
 
     wm = pyinotify.WatchManager()
-    inotify_handler = INotifyHandler()
+    inotify_handler = INotifyHandler(websockets)
     self._notifier = pyinotify.Notifier(wm, inotify_handler)
     wm.add_watch(image_path, pyinotify.IN_MOVED_TO, rec=True, auto_add=True)
 
-    http_handler = HTTPRequestHandler(image_path)
-    self._httpd = pywsgi.WSGIServer(
+    http_handler = HTTPRequestHandler(image_path, websockets)
+    self._httpd = geventserver.WSGIServer(
         (listen_host, listen_port),
         http_handler,
         keyfile=server_key,
