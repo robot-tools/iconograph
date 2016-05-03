@@ -35,21 +35,23 @@ parser.add_argument(
 FLAGS = parser.parse_args()
 
 
-class CertServer(object):
+class ImageRequestHandler(object):
+
+  def __call__(self, env, start_response):
+    print(env['PATH_INFO'])
+    start_response('200 OK', [('Content-Type', 'text/plain')])
+    return [b'foo']
+
+
+class ImageServer(object):
 
   def __init__(self, listen_host, listen_port, server_key, server_cert, ca_cert):
 
-    def HandleRequest(env, start_response):
-      print(env)
-      return
-      print('Request from: [%s]:%d' % (self.client_address[0], self.client_address[1]))
-      peer_cert = json.dumps(dict(x[0] for x in self.request.getpeercert()['subject']), sort_keys=True)
-      print('Client cert:\n\t%s' % peer_cert.replace('\n', '\n\t'))
-      size = int(self.headers['Content-Length'])
+    self._handler = ImageRequestHandler()
 
     self._httpd = pywsgi.WSGIServer(
         (listen_host, listen_port),
-        HandleRequest,
+        self._handler,
         keyfile=server_key,
         certfile=server_cert,
         ca_certs=ca_cert,
@@ -61,7 +63,7 @@ class CertServer(object):
 
 
 def main():
-  server = CertServer(
+  server = ImageServer(
       FLAGS.listen_host,
       FLAGS.listen_port,
       FLAGS.server_key,
