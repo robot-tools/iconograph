@@ -52,9 +52,15 @@ parser.add_argument(
 FLAGS = parser.parse_args()
 
 
-def GetWebSocketHandler(websockets):
+def GetWebSocketHandler(image_types, websockets):
   class WebSocketHandler(websocket.WebSocket):
     def opened(self):
+      self.send(json.dumps({
+        'type': 'image_types',
+        'data': {
+          'image_types': list(image_types),
+        },
+      }), False)
       websockets.add(self)
 
     def closed(self, code, reason=None):
@@ -91,7 +97,7 @@ class HTTPRequestHandler(object):
   def __init__(self, image_path, image_types, websockets):
     self._image_path = image_path
     self._image_types = image_types
-    inner_handler = GetWebSocketHandler(websockets)
+    inner_handler = GetWebSocketHandler(image_types, websockets)
     self._websocket_handler = wsgiutils.WebSocketWSGIApplication(handler_cls=inner_handler)
 
   def __call__(self, env, start_response):
