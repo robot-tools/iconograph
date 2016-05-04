@@ -52,24 +52,53 @@ parser.add_argument(
 FLAGS = parser.parse_args()
 
 
-def GetWebSocketHandler(image_types, websockets):
-  class WebSocketHandler(websocket.WebSocket):
+class WebSockets(object):
+  def __init__(self):
+    self.slaves = set()
+    self.masters = set()
+
+  def __iter__(self):
+    return iter(self.slaves + self.masters)
+
+
+class BaseWSHandler(websocket.WebSocket):
+  def opened(self):
+    self.send(json.dumps({
+      'type': 'image_types',
+      'data': {
+        'image_types': list(image_types),
+      },
+    }), False)
+
+
+def GetSlaveWSHandler(image_types, websockets):
+  class SlaveWSHandler(BaseWSHandler):
     def opened(self):
-      self.send(json.dumps({
-        'type': 'image_types',
-        'data': {
-          'image_types': list(image_types),
-        },
-      }), False)
-      websockets.add(self)
+      super().opened(self)
+      websockets.slave.add(self)
 
     def closed(self, code, reason=None):
-      websockets.remove(self)
+      websockets.slave.remove(self)
 
     def received_message(self, msg):
-      print(json.loads(str(msg)))
+      print('from slave:', json.loads(str(msg)))
 
-  return WebSocketHandler
+  return SlaveWSHandler
+
+
+def GetMasterWSHandler(image_types, websockets):
+  class MasterWSHandler(websocket.WebSocket):
+    def opened(self):
+      super().opened(self)
+      websockets.master.add(self)
+
+    def closed(self, code, reason=None):
+      websockets.master.remove(self)
+
+    def received_message(self, msg):
+      print('from master:', json.loads(str(msg)))
+
+  return MasterWSHandler
 
 
 class INotifyHandler(pyinotify.ProcessEvent):
@@ -100,16 +129,22 @@ class HTTPRequestHandler(object):
   def __init__(self, image_path, image_types, websockets):
     self._image_path = image_path
     self._image_types = image_types
-    inner_handler = GetWebSocketHandler(image_types, websockets)
-    self._websocket_handler = wsgiutils.WebSocketWSGIApplication(handler_cls=inner_handler)
+
+    slave_ws_handler = GetSlaveWSHandler(image_types, websockets)
+    self._slave_ws_handler = wsgiutils.WebSocketWSGIApplication(handler_cls=slave_ws_handler)
+
+    master_ws_handler = GetMasterWSHandler(image_types, websockets)
+    self._master_ws_handler = wsgiutils.WebSocketWSGIApplication(handler_cls=master_ws_handler)
 
   def __call__(self, env, start_response):
     path = env['PATH_INFO']
     if path.startswith('/image/'):
       image_type, image_name = path[7:].split('/', 1)
       return self._ServeImageFile(start_response, image_type, image_name)
-    elif path == '/ws':
-      return self._websocket_handler(env, start_response)
+    elif path == '/ws/slave':
+      return self._slave_ws_handler(env, start_response)
+    elif path == '/ws/master':
+      return self._master_ws_handler(env, start_response)
 
     start_response('404 Not found', [('Content-Type', 'text/plain')])
     return [b'Not found']
@@ -146,7 +181,7 @@ class HTTPRequestHandler(object):
 class Server(object):
 
   def __init__(self, listen_host, listen_port, server_key, server_cert, ca_cert, image_path, image_types):
-    websockets = set()
+    websockets = WebSockets()
 
     wm = pyinotify.WatchManager()
     inotify_handler = INotifyHandler(websockets)

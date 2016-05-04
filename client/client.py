@@ -57,7 +57,7 @@ def main():
     'certfile': FLAGS.https_client_cert,
     'ca_certs': FLAGS.https_ca_cert,
   }
-  client = Client('wss://%s/ws' % FLAGS.server, protocols=['http-only', 'chat'], ssl_options=ssl_options)
+  client = Client('wss://%s/ws/slave' % FLAGS.server, protocols=['http-only', 'chat'], ssl_options=ssl_options)
   client.Loop()
 
 
