@@ -66,6 +66,9 @@ def GetWebSocketHandler(image_types, websockets):
     def closed(self, code, reason=None):
       websockets.remove(self)
 
+    def received_message(self, msg):
+      print(json.loads(str(msg)))
+
   return WebSocketHandler
 
 
