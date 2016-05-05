@@ -137,12 +137,15 @@ class INotifyHandler(pyinotify.ProcessEvent):
 class HTTPRequestHandler(object):
 
   _MIME_TYPES = {
+    '.html': 'text/html',
     '.iso': 'application/octet-stream',
     '.json': 'application/json',
   }
   _BLOCK_SIZE = 2 ** 16
 
   def __init__(self, image_path, image_types, websockets):
+    self._static_path = os.path.join(os.path.dirname(sys.argv[0]), 'static')
+
     self._image_path = image_path
     self._image_types = image_types
 
@@ -154,9 +157,16 @@ class HTTPRequestHandler(object):
 
   def __call__(self, env, start_response):
     path = env['PATH_INFO']
+
+    if path == '/':
+      path = '/static/root.html'
+
     if path.startswith('/image/'):
       image_type, image_name = path[7:].split('/', 1)
       return self._ServeImageFile(start_response, image_type, image_name)
+    elif path.startswith('/static/'):
+      file_name = path[8:]
+      return self._ServeStaticFile(start_response, file_name)
     elif path == '/ws/slave':
       return self._slave_ws_handler(env, start_response)
     elif path == '/ws/master':
@@ -191,7 +201,18 @@ class HTTPRequestHandler(object):
       start_response('404 Not found')
       return []
 
-    return
+  def _ServeStaticFile(self, start_response, file_name):
+    file_name = os.path.basename(file_name)
+    assert not file_name.startswith('.')
+
+    file_path = os.path.join(self._static_path, file_name)
+    try:
+      with open(file_path, 'rb') as fh:
+        start_response('200 OK', [('Content-Type', self._MIMEType(file_name))])
+        return [fh.read()]
+    except FileNotFoundError:
+      start_response('404 Not found')
+      return []
 
 
 class Server(object):
