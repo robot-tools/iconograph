@@ -7,6 +7,8 @@ import pyinotify
 import ssl
 import sys
 import threading
+import time
+import uuid
 from ws4py import websocket
 from ws4py.server import geventserver
 from ws4py.server import wsgiutils
@@ -58,11 +60,17 @@ class WebSockets(object):
     self.masters = set()
 
   def __iter__(self):
-    return iter(self.slaves + self.masters)
+    return iter(self.slaves | self.masters)
+
+  @staticmethod
+  def Broadcast(targets, msg):
+    msgstr = json.dumps(msg)
+    for target in targets:
+      target.send(msgstr, False)
 
 
 class BaseWSHandler(websocket.WebSocket):
-  def opened(self):
+  def opened(self, image_types):
     self.send(json.dumps({
       'type': 'image_types',
       'data': {
@@ -74,29 +82,38 @@ class BaseWSHandler(websocket.WebSocket):
 def GetSlaveWSHandler(image_types, websockets):
   class SlaveWSHandler(BaseWSHandler):
     def opened(self):
-      super().opened(self)
-      websockets.slave.add(self)
+      super().opened(image_types)
+      websockets.slaves.add(self)
 
     def closed(self, code, reason=None):
-      websockets.slave.remove(self)
+      websockets.slaves.remove(self)
 
     def received_message(self, msg):
-      print('from slave:', json.loads(str(msg)))
+      parsed = json.loads(str(msg))
+      if parsed['type'] == 'report':
+        newmsg = {
+          'type': 'report',
+          'id': str(uuid.uuid4()),
+          'received': int(time.time()),
+          'client': self.peer_address,
+          'data': parsed['data'],
+        }
+        websockets.Broadcast(websockets.masters, newmsg)
 
   return SlaveWSHandler
 
 
 def GetMasterWSHandler(image_types, websockets):
-  class MasterWSHandler(websocket.WebSocket):
+  class MasterWSHandler(BaseWSHandler):
     def opened(self):
-      super().opened(self)
-      websockets.master.add(self)
+      super().opened(image_types)
+      websockets.masters.add(self)
 
     def closed(self, code, reason=None):
-      websockets.master.remove(self)
+      websockets.masters.remove(self)
 
     def received_message(self, msg):
-      print('from master:', json.loads(str(msg)))
+      pass
 
   return MasterWSHandler
 
@@ -109,13 +126,12 @@ class INotifyHandler(pyinotify.ProcessEvent):
     if event.name != 'manifest.json':
       return
     image_type = os.path.basename(event.path)
-    for websocket in self._websockets:
-      websocket.send(json.dumps({
-        'type': 'new_manifest',
-        'data': {
-          'image_type': image_type,
-        },
-      }), False)
+    self._websockets.Broadcast(self._websockets, {
+      'type': 'new_manifest',
+      'data': {
+        'image_type': image_type,
+      },
+    })
 
 
 class HTTPRequestHandler(object):

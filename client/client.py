@@ -28,6 +28,11 @@ parser.add_argument(
     dest='https_client_key',
     action='store',
     required=True)
+parser.add_argument(
+    '--image-type',
+    dest='image_type',
+    action='store',
+    required=True)
 FLAGS = parser.parse_args()
 
 
@@ -42,6 +47,7 @@ class Client(threadedclient.WebSocketClient):
         'data': {
           'hostname': socket.gethostname(),
           'uptime_seconds': self._Uptime(),
+          'image_type': FLAGS.image_type,
         },
       }), False)
       time.sleep(5.0)
@@ -49,6 +55,11 @@ class Client(threadedclient.WebSocketClient):
   def _Uptime(self):
     with open('/proc/uptime', 'r') as fh:
       return int(float(fh.readline().split(' ', 1)[0]))
+
+  def received_message(self, msg):
+    parsed = json.loads(str(msg))
+    if parsed['type'] == 'image_types':
+      assert FLAGS.image_type in parsed['data']['image_types']
 
 
 def main():
