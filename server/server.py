@@ -139,6 +139,7 @@ class HTTPRequestHandler(object):
   _MIME_TYPES = {
     '.html': 'text/html',
     '.iso': 'application/octet-stream',
+    '.js': 'application/javascript',
     '.json': 'application/json',
   }
   _BLOCK_SIZE = 2 ** 16
@@ -150,10 +151,14 @@ class HTTPRequestHandler(object):
     self._image_types = image_types
 
     slave_ws_handler = GetSlaveWSHandler(image_types, websockets)
-    self._slave_ws_handler = wsgiutils.WebSocketWSGIApplication(handler_cls=slave_ws_handler)
+    self._slave_ws_handler = wsgiutils.WebSocketWSGIApplication(
+      protocols=['iconograph-slave'],
+      handler_cls=slave_ws_handler)
 
     master_ws_handler = GetMasterWSHandler(image_types, websockets)
-    self._master_ws_handler = wsgiutils.WebSocketWSGIApplication(handler_cls=master_ws_handler)
+    self._master_ws_handler = wsgiutils.WebSocketWSGIApplication(
+      protocols=['iconograph-master'],
+      handler_cls=master_ws_handler)
 
   def __call__(self, env, start_response):
     path = env['PATH_INFO']
