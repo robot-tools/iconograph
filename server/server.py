@@ -137,6 +137,7 @@ class INotifyHandler(pyinotify.ProcessEvent):
 class HTTPRequestHandler(object):
 
   _MIME_TYPES = {
+    '.css': 'text/css',
     '.html': 'text/html',
     '.iso': 'application/octet-stream',
     '.js': 'application/javascript',
