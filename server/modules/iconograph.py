@@ -50,7 +50,7 @@ def main():
       'install',
       '--assume-yes',
       'daemontools-run', 'genisoimage', 'git', 'python3-openssl',
-      'python3-requests')
+      'python3-requests', 'python3-ws4py')
 
   os.makedirs(os.path.join(FLAGS.chroot_path, 'icon', 'config'), exist_ok=True)
 
