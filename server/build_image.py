@@ -27,6 +27,11 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
+    '--image-type',
+    dest='image_type',
+    action='store',
+    required=True)
+parser.add_argument(
     '--kernel-arg',
     dest='kernel_args',
     action='append')
@@ -97,9 +102,10 @@ class ImageBuilder(object):
     'loopback.cfg': 'boot/grub/loopback.cfg',
   }
 
-  def __init__(self, source_iso, image_dir, archive, arch, release, modules, kernel_args, volume_id=None):
+  def __init__(self, source_iso, image_dir, image_type, archive, arch, release, modules, kernel_args, volume_id=None):
     self._source_iso = source_iso
     self._image_dir = image_dir
+    self._image_type = image_type
     self._archive = archive
     self._arch = arch
     self._release = release
@@ -226,11 +232,13 @@ class ImageBuilder(object):
   def _WriteVersion(self, chroot_path, timestamp):
     with open(os.path.join(chroot_path, 'etc', 'iconograph.json'), 'w') as fh:
       info = {
+        'image_type': self._image_type,
         'timestamp': timestamp,
       }
       if FLAGS.volume_id:
         info['volume_id'] = FLAGS.volume_id
       json.dump(info, fh, sort_keys=True, indent=4)
+      fh.write('\n')
 
   def _RunModules(self, chroot_path):
     for module in self._modules:
@@ -283,7 +291,7 @@ class ImageBuilder(object):
           dest_fh.write(line.replace('$KERNEL_ARGS', ' '.join(self._kernel_args)))
 
   def _CreateISO(self, union_path, timestamp):
-    dest_iso = os.path.join(self._image_dir, '%d.iso' % timestamp)
+    dest_iso = os.path.join(self._image_dir, self._image_type, '%d.iso' % timestamp)
     args = [
         '--output=%s' % dest_iso,
         '--',
@@ -343,6 +351,7 @@ def main():
   builder = ImageBuilder(
       FLAGS.source_iso,
       FLAGS.image_dir,
+      FLAGS.image_type,
       FLAGS.archive,
       FLAGS.arch,
       FLAGS.release,
