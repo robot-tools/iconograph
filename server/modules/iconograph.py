@@ -32,6 +32,11 @@ parser.add_argument(
     action='store',
     type=int,
     default=5)
+parser.add_argument(
+    '--server',
+    dest='server',
+    action='store',
+    required=True)
 FLAGS = parser.parse_args()
 
 
@@ -70,12 +75,18 @@ def main():
         FLAGS.https_ca_cert,
         os.path.join(FLAGS.chroot_path, 'icon', 'config', 'ca.www.cert.pem'))
 
-
-  path = os.path.join(FLAGS.chroot_path, 'icon', 'config', 'fetcher.flags')
-  with open(path, 'w') as fh:
+  # TODO: remove after we integrate this into client.py
+  fetcher_flags = os.path.join(FLAGS.chroot_path, 'icon', 'config', 'fetcher.flags')
+  with open(fetcher_flags, 'w') as fh:
     fh.write('--base-url=%(base_url)s --max-images=%(max_images)d\n' % {
       'base_url': FLAGS.base_url,
       'max_images': FLAGS.max_images,
+    })
+
+  client_flags = os.path.join(FLAGS.chroot_path, 'icon', 'config', 'client.flags')
+  with open(client_flags, 'w') as fh:
+    fh.write('--server=%(server)s\n' % {
+      'server': FLAGS.server,
     })
 
   os.symlink(
