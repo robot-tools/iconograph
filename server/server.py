@@ -142,6 +142,7 @@ class HTTPRequestHandler(object):
     '.iso': 'application/octet-stream',
     '.js': 'application/javascript',
     '.json': 'application/json',
+    '.woff': 'application/font-woff',
   }
   _BLOCK_SIZE = 2 ** 16
 
