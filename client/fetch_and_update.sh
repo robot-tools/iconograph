@@ -10,7 +10,7 @@ mkdir -p "${IMAGES}"
 BOOT="/isodevice"
 
 FETCHER_FLAGS="$(cat /icon/config/fetcher.flags)"
-if -f /icon/config/update_grub.flags; then
+if test -f /icon/config/update_grub.flags; then
   UPDATE_GRUB_FLAGS="$(cat /icon/config/update_grub.flags)"
 fi
 CA_CERT="/icon/config/ca.image.cert.pem"
