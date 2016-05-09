@@ -225,9 +225,12 @@ class ImageBuilder(object):
 
   def _WriteVersion(self, chroot_path, timestamp):
     with open(os.path.join(chroot_path, 'etc', 'iconograph.json'), 'w') as fh:
-      json.dump({
+      info = {
         'timestamp': timestamp,
-      }, fh)
+      }
+      if FLAGS.volume_id:
+        info['volume_id'] = FLAGS.volume_id
+      json.dump(info, fh, sort_keys=True, indent=4)
 
   def _RunModules(self, chroot_path):
     for module in self._modules:
