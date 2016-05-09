@@ -2,7 +2,9 @@
 
 import argparse
 import os
+import re
 import string
+import subprocess
 import sys
 
 
@@ -22,6 +24,7 @@ FLAGS = parser.parse_args()
 
 class GrubUpdater(object):
 
+  _VOLUME_ID_REGEX = re.compile(b'^Volume id: (?P<volume_id>.+)$', re.MULTILINE)
   _HOTKEYS = string.digits + string.ascii_letters
 
   def __init__(self, image_dir, boot_dir):
@@ -31,6 +34,15 @@ class GrubUpdater(object):
     assert self._image_dir.startswith(self._boot_dir)
 
     self._image_path = '/' + os.path.relpath(self._image_dir, self._boot_dir)
+
+  def _GetVolumeID(self, path):
+    isoinfo = subprocess.check_output([
+      'isoinfo',
+      '-d',
+      '-i', path,
+    ])
+    match = self._VOLUME_ID_REGEX.search(isoinfo)
+    return match.group('volume_id').decode('ascii')
 
   def Update(self):
     current = os.readlink(os.path.join(self._image_dir, 'current'))
@@ -50,7 +62,7 @@ set default=%(default_image_filename)s
 
     for i, filename in enumerate(sorted(files, reverse=True)):
       sys.stdout.write("""
-menuentry "%(image_filename)s" --hotkey=%(hotkey)s {
+menuentry "%(image_filename)s (%(volume_id)s)" --hotkey=%(hotkey)s {
   search --no-floppy --file --set=root %(image_path)s/%(image_filename)s
   iso_path="%(image_path)s/%(image_filename)s"
   export iso_path
@@ -62,6 +74,7 @@ menuentry "%(image_filename)s" --hotkey=%(hotkey)s {
         'image_filename': filename,
         'image_path': self._image_path,
         'hotkey': self._HOTKEYS[i],
+        'volume_id': self._GetVolumeID(os.path.join(self._image_dir, filename)),
       })
 
 
