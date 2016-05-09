@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 
@@ -37,6 +38,7 @@ FLAGS = parser.parse_args()
 class ManifestBuilder(object):
 
   _FILE_REGEX = re.compile('^(?P<timestamp>\d+)\.iso$')
+  _VOLUME_ID_REGEX = re.compile(b'^Volume id: (?P<volume_id>.+)$', re.MULTILINE)
   _BUF_SIZE = 2 ** 16
 
   def __init__(self, image_dir, old_manifest):
@@ -54,6 +56,15 @@ class ManifestBuilder(object):
             for image in parsed['images'])
     except FileNotFoundError:
       return {}
+
+  def _GetVolumeID(self, path):
+    isoinfo = subprocess.check_output([
+      'isoinfo',
+      '-d',
+      '-i', path,
+    ])
+    match = self._VOLUME_ID_REGEX.search(isoinfo)
+    return match.group('volume_id').decode('ascii')
 
   def BuildManifest(self):
     ret = {
@@ -77,7 +88,11 @@ class ManifestBuilder(object):
         image.update(old_image)
         continue
 
-      with open(os.path.join(self._image_dir, filename), 'rb') as fh:
+      image_path = os.path.join(self._image_dir, filename)
+
+      image['volume_id'] = self._GetVolumeID(image_path)
+
+      with open(image_path, 'rb') as fh:
         hash_obj = hashlib.sha256()
         while True:
           data = fh.read(self._BUF_SIZE)

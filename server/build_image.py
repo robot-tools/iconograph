@@ -54,6 +54,11 @@ parser.add_argument(
     dest='source_iso',
     action='store',
     required=True)
+parser.add_argument(
+    '--volume-id',
+    dest='volume_id',
+    action='store',
+    required=True)
 FLAGS = parser.parse_args()
 
 
@@ -92,7 +97,7 @@ class ImageBuilder(object):
     'loopback.cfg': 'boot/grub/loopback.cfg',
   }
 
-  def __init__(self, source_iso, image_dir, archive, arch, release, modules, kernel_args):
+  def __init__(self, source_iso, image_dir, archive, arch, release, modules, kernel_args, volume_id=None):
     self._source_iso = source_iso
     self._image_dir = image_dir
     self._archive = archive
@@ -100,6 +105,7 @@ class ImageBuilder(object):
     self._release = release
     self._modules = modules or []
     self._kernel_args = kernel_args or []
+    self._volume_id = volume_id
 
     self._ico_server_path = os.path.dirname(sys.argv[0])
 
@@ -275,10 +281,15 @@ class ImageBuilder(object):
 
   def _CreateISO(self, union_path, timestamp):
     dest_iso = os.path.join(self._image_dir, '%d.iso' % timestamp)
-    self._Exec(
-        'grub-mkrescue',
+    args = [
         '--output=%s' % dest_iso,
-        union_path)
+        '--',
+    ]
+    if self._volume_id:
+      args.extend(['-V', self._volume_id])
+    args.append(union_path)
+
+    self._Exec('grub-mkrescue', *args)
     return dest_iso
 
   def _BuildImage(self):
@@ -333,7 +344,8 @@ def main():
       FLAGS.arch,
       FLAGS.release,
       FLAGS.modules,
-      FLAGS.kernel_args)
+      FLAGS.kernel_args,
+      FLAGS.volume_id)
   builder.BuildImage()
 
 
