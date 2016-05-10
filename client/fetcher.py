@@ -126,7 +126,7 @@ class Fetcher(object):
       return
 
     url = '%s/%s' % (self._base_url, filename)
-    print('Fetching:', url)
+    print('Fetching:', url, flush=True)
     resp = self._session.get(url, stream=True)
 
     hash_obj = hashlib.sha256()
@@ -155,7 +155,7 @@ class Fetcher(object):
     except FileNotFoundError:
       pass
 
-    print('Changing current link to:', filename)
+    print('Changing current link to:', filename, flush=True)
     temp_path = tempfile.mktemp(dir=self._image_dir)
     os.symlink(filename, temp_path)
     os.rename(temp_path, current_path)
@@ -177,6 +177,6 @@ class Fetcher(object):
       images.append((int(match.group('timestamp')), filename))
     images.sort(reverse=True)
     for timestamp, filename in images[max_images:]:
-      print('Deleting old image:', filename)
+      print('Deleting old image:', filename, flush=True)
       path = os.path.join(self._image_dir, filename)
       os.unlink(path)

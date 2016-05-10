@@ -6,10 +6,16 @@ import json
 import os
 import socket
 import time
+import update_grub
 from ws4py.client import threadedclient
 
 
 parser = argparse.ArgumentParser(description='iconograph fetcher')
+parser.add_argument(
+    '--boot-dir',
+    dest='boot_dir',
+    action='store',
+    required=True)
 parser.add_argument(
     '--config',
     dest='config',
@@ -94,6 +100,11 @@ class Client(threadedclient.WebSocketClient):
         FLAGS.https_client_key)
     fetch.Fetch()
     fetch.DeleteOldImages()
+
+    update = update_grub.GrubUpdater(
+        FLAGS.image_dir,
+        FLAGS.boot_dir)
+    update.Update()
 
   def received_message(self, msg):
     parsed = json.loads(msg.data.decode('utf8'))

@@ -1,25 +1,10 @@
 #!/usr/bin/python3
 
-import argparse
 import os
 import re
 import string
 import subprocess
 import sys
-
-
-parser = argparse.ArgumentParser(description='iconograph update_grub')
-parser.add_argument(
-    '--boot-dir',
-    dest='boot_dir',
-    action='store',
-    required=True)
-parser.add_argument(
-    '--image-dir',
-    dest='image_dir',
-    action='store',
-    required=True)
-FLAGS = parser.parse_args()
 
 
 class GrubUpdater(object):
@@ -76,12 +61,3 @@ menuentry "%(image_filename)s (%(volume_id)s)" --hotkey=%(hotkey)s {
         'hotkey': self._HOTKEYS[i],
         'volume_id': self._GetVolumeID(os.path.join(self._image_dir, filename)),
       })
-
-
-def main():
-  updater = GrubUpdater(FLAGS.image_dir, FLAGS.boot_dir)
-  updater.Update()
-
-
-if __name__ == '__main__':
-  main()

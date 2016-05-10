@@ -7,6 +7,7 @@ exec 2>&1
 BASE=$(dirname $0)
 
 exec "${BASE}/client.py" \
+  --boot-dir="/isodevice" \
   --image-dir="/isodevice/iconograph" \
   --ca-cert="/icon/config/ca.image.cert.pem" \
   --https-ca-cert="/icon/config/ca.www.cert.pem" \
