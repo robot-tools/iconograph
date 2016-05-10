@@ -32,6 +32,7 @@ class GrubUpdater(object):
   def Update(self):
     grub_dir = os.path.join(self._boot_dir, 'grub')
 
+    # TODO: clean up if we fail here
     with tempfile.NamedTemporaryFile('w', dir=grub_dir, delete=False) as fh:
       current = os.readlink(os.path.join(self._image_dir, 'current'))
 
