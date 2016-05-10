@@ -92,8 +92,8 @@ class Client(threadedclient.WebSocketClient):
         FLAGS.https_ca_cert,
         FLAGS.https_client_cert,
         FLAGS.https_client_key)
-    fetcher.Fetch()
-    fetcher.DeleteOldImages()
+    fetch.Fetch()
+    fetch.DeleteOldImages()
 
   def received_message(self, msg):
     parsed = json.loads(msg.data.decode('utf8'))
