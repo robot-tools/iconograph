@@ -64,6 +64,7 @@ class Client(threadedclient.WebSocketClient):
   def Loop(self):
     self.daemon = True
     self.connect()
+    self._OnNewManifest2()
     while True:
       report = {
         'hostname': socket.gethostname(),
@@ -91,6 +92,9 @@ class Client(threadedclient.WebSocketClient):
   def _OnNewManifest(self, data):
     if data['image_type'] != self._config['image_type']:
       return
+    self._OnNewManifest2()
+
+  def _OnNewManifest2(self):
     fetch = fetcher.Fetcher(
         'https://%s/image/%s' % (FLAGS.server, self._config['image_type']),
         FLAGS.ca_cert,
