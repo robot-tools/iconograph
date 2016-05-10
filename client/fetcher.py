@@ -130,17 +130,17 @@ class Fetcher(object):
     resp = self._session.get(url, stream=True)
 
     hash_obj = hashlib.sha256()
-    try:
-      fh = tempfile.NamedTemporaryFile(dir=self._image_dir, delete=False)
-      for data in resp.iter_content(self._BUF_SIZE):
-        hash_obj.update(data)
-        fh.write(data)
-      if hash_obj.hexdigest() != image['hash']:
-        raise InvalidHash
-      os.rename(fh.name, path)
-    except:
-      os.unlink(fh.name)
-      raise
+    with tempfile.NamedTemporaryFile(dir=self._image_dir, delete=False) as fh:
+      try:
+        for data in resp.iter_content(self._BUF_SIZE):
+          hash_obj.update(data)
+          fh.write(data)
+        if hash_obj.hexdigest() != image['hash']:
+          raise InvalidHash
+        os.rename(fh.name, path)
+      except:
+        os.unlink(fh.name)
+        raise
 
   def _SetCurrent(self, image):
     filename = '%d.iso' % (image['timestamp'])

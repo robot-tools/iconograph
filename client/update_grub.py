@@ -32,25 +32,25 @@ class GrubUpdater(object):
   def Update(self):
     grub_dir = os.path.join(self._boot_dir, 'grub')
 
-    # TODO: clean up if we fail here
     with tempfile.NamedTemporaryFile('w', dir=grub_dir, delete=False) as fh:
-      current = os.readlink(os.path.join(self._image_dir, 'current'))
+      try:
+        current = os.readlink(os.path.join(self._image_dir, 'current'))
 
-      fh.write("""
+        fh.write("""
 set timeout=5
 set default=%(default_image_filename)s
 """ % {
-        'default_image_filename': os.path.basename(current),
-      })
+          'default_image_filename': os.path.basename(current),
+        })
 
-      files = []
-      for filename in os.listdir(self._image_dir):
-        if not filename.endswith('.iso'):
-          continue
-        files.append(filename)
+        files = []
+        for filename in os.listdir(self._image_dir):
+          if not filename.endswith('.iso'):
+            continue
+          files.append(filename)
 
-      for i, filename in enumerate(sorted(files, reverse=True)):
-        fh.write("""
+        for i, filename in enumerate(sorted(files, reverse=True)):
+          fh.write("""
 menuentry "%(image_filename)s (%(volume_id)s)" --hotkey=%(hotkey)s {
   search --no-floppy --file --set=root %(image_path)s/%(image_filename)s
   iso_path="%(image_path)s/%(image_filename)s"
@@ -60,11 +60,14 @@ menuentry "%(image_filename)s (%(volume_id)s)" --hotkey=%(hotkey)s {
   configfile /boot/grub/loopback.cfg
 }
 """ % {
-          'image_filename': filename,
-          'image_path': self._image_path,
-          'hotkey': self._HOTKEYS[i],
-          'volume_id': self._GetVolumeID(os.path.join(self._image_dir, filename)),
-        })
+            'image_filename': filename,
+            'image_path': self._image_path,
+            'hotkey': self._HOTKEYS[i],
+            'volume_id': self._GetVolumeID(os.path.join(self._image_dir, filename)),
+          })
 
-      fh.flush()
-      os.rename(fh.name, os.path.join(grub_dir, 'grub.cfg'))
+        fh.flush()
+        os.rename(fh.name, os.path.join(grub_dir, 'grub.cfg'))
+      except:
+        os.unlink(fh.name)
+        raise
