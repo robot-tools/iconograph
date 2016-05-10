@@ -8,11 +8,6 @@ import subprocess
 
 parser = argparse.ArgumentParser(description='iconograph install module')
 parser.add_argument(
-    '--base-url',
-    dest='base_url',
-    action='store',
-    required=True)
-parser.add_argument(
     '--ca-cert',
     dest='ca_cert',
     action='store',
@@ -26,12 +21,6 @@ parser.add_argument(
     '--https-ca-cert',
     dest='https_ca_cert',
     action='store')
-parser.add_argument(
-    '--max-images',
-    dest='max_images',
-    action='store',
-    type=int,
-    default=5)
 parser.add_argument(
     '--server',
     dest='server',
@@ -74,14 +63,6 @@ def main():
     shutil.copyfile(
         FLAGS.https_ca_cert,
         os.path.join(FLAGS.chroot_path, 'icon', 'config', 'ca.www.cert.pem'))
-
-  # TODO: remove after we integrate this into client.py
-  fetcher_flags = os.path.join(FLAGS.chroot_path, 'icon', 'config', 'fetcher.flags')
-  with open(fetcher_flags, 'w') as fh:
-    fh.write('--base-url=%(base_url)s --max-images=%(max_images)d\n' % {
-      'base_url': FLAGS.base_url,
-      'max_images': FLAGS.max_images,
-    })
 
   client_flags = os.path.join(FLAGS.chroot_path, 'icon', 'config', 'client.flags')
   with open(client_flags, 'w') as fh:

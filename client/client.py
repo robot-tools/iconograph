@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import fetcher
 import json
 import os
 import socket
@@ -15,6 +16,11 @@ parser.add_argument(
     action='store',
     default='/etc/iconograph.json')
 parser.add_argument(
+    '--ca-cert',
+    dest='ca_cert',
+    action='store',
+    required=True)
+parser.add_argument(
     '--https-ca-cert',
     dest='https_ca_cert',
     action='store',
@@ -27,6 +33,11 @@ parser.add_argument(
 parser.add_argument(
     '--https-client-key',
     dest='https_client_key',
+    action='store',
+    required=True)
+parser.add_argument(
+    '--image-dir',
+    dest='image_dir',
     action='store',
     required=True)
 parser.add_argument(
@@ -68,10 +79,28 @@ class Client(threadedclient.WebSocketClient):
     next_image = os.path.basename(os.readlink('/isodevice/iconograph/current'))
     return int(next_image.split('.', 1)[0])
 
+  def _OnImageTypes(self, data):
+    assert self._config['image_type'] in data['image_types']
+
+  def _OnNewManifest(self, data):
+    if data['image_type'] != self._config['image_type']:
+      return
+    fetch = fetcher.Fetcher(
+        'https://%s/image/%s' % (FLAGS.server, self._config['image_type']),
+        FLAGS.ca_cert,
+        FLAGS.image_dir,
+        FLAGS.https_ca_cert,
+        FLAGS.https_client_cert,
+        FLAGS.https_client_key)
+    fetcher.Fetch()
+    fetcher.DeleteOldImages()
+
   def received_message(self, msg):
     parsed = json.loads(msg.data.decode('utf8'))
     if parsed['type'] == 'image_types':
-      assert self._config['image_type'] in parsed['data']['image_types']
+      self._OnImageTypes(parsed['data'])
+    elif parsed['type'] == 'new_manifest':
+      self._OnNewManifest(parsed['data'])
 
 
 def main():

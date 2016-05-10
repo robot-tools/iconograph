@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-import argparse
 import codecs
 import json
 import hashlib
@@ -13,43 +12,6 @@ import struct
 import subprocess
 import tempfile
 from OpenSSL import crypto
-
-
-parser = argparse.ArgumentParser(description='iconograph fetcher')
-parser.add_argument(
-    '--base-url',
-    dest='base_url',
-    action='store',
-    required=True)
-parser.add_argument(
-    '--ca-cert',
-    dest='ca_cert',
-    action='store',
-    required=True)
-parser.add_argument(
-    '--https-ca-cert',
-    dest='https_ca_cert',
-    action='store')
-parser.add_argument(
-    '--https-client-cert',
-    dest='https_client_cert',
-    action='store')
-parser.add_argument(
-    '--https-client-key',
-    dest='https_client_key',
-    action='store')
-parser.add_argument(
-    '--image-dir',
-    dest='image_dir',
-    action='store',
-    required=True)
-parser.add_argument(
-    '--max-images',
-    dest='max_images',
-    action='store',
-    type=int,
-    default=5)
-FLAGS = parser.parse_args()
 
 
 class Error(Exception):
@@ -204,7 +166,7 @@ class Fetcher(object):
     self._FetchImage(image)
     self._SetCurrent(image)
 
-  def DeleteOldImages(self, max_images):
+  def DeleteOldImages(self, max_images=5):
     if not max_images:
       return
     images = []
@@ -218,19 +180,3 @@ class Fetcher(object):
       print('Deleting old image:', filename)
       path = os.path.join(self._image_dir, filename)
       os.unlink(path)
-
-
-def main():
-  fetcher = Fetcher(
-      FLAGS.base_url,
-      FLAGS.ca_cert,
-      FLAGS.image_dir,
-      FLAGS.https_ca_cert,
-      FLAGS.https_client_cert,
-      FLAGS.https_client_key)
-  fetcher.Fetch()
-  fetcher.DeleteOldImages(FLAGS.max_images)
-
-
-if __name__ == '__main__':
-  main()

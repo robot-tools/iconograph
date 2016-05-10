@@ -6,10 +6,10 @@ exec 2>&1
 
 BASE=$(dirname $0)
 
-FLAGS="$(cat /icon/config/client.flags)"
-
-HTTPS_CLIENT_KEY="/systemid/$(hostname).www.key.pem"
-HTTPS_CLIENT_CERT="/systemid/$(hostname).www.cert.pem"
-HTTPS_CA_CERT="/icon/config/ca.www.cert.pem"
-
-exec "${BASE}/client.py" --https-ca-cert="${HTTPS_CA_CERT}" --https-client-cert="${HTTPS_CLIENT_CERT}" --https-client-key="${HTTPS_CLIENT_KEY}" ${FLAGS}
+exec "${BASE}/client.py" \
+  --image-dir="/isodevice/iconograph" \
+  --ca-cert="/icon/config/ca.image.cert.pem" \
+  --https-ca-cert="/icon/config/ca.www.cert.pem" \
+  --https-client-cert="/systemid/$(hostname).www.cert.pem" \
+  --https-client-key="/systemid/$(hostname).www.key.pem" \
+  $(cat /icon/config/client.flags)
