@@ -62,6 +62,9 @@ ImageController.prototype.addImageType_ = function(name) {
   this.createNode_(headers, 'header', 'Current volume ID');
   this.createNode_(headers, 'header', 'Next image');
   this.createNode_(headers, 'header', 'Next volume ID');
+  this.createNode_(headers, 'header'); // Reboot
+  this.createNode_(headers, 'header'); // Reboot into
+  this.createNode_(headers, 'header', 'Status');
 
   type.version_section = this.createNode_(this.overlay_, 'versions');
   type.version_section.setAttribute('data-key', name);
@@ -135,6 +138,8 @@ ImageController.prototype.onReport_ = function(msg) {
   instance.next_timestamp.innerText = msg.next_timestamp;
   msg.next_volume_id = msg.next_volume_id || '';
   instance.next_volume_id.innerText = msg.next_volume_id.substring(0, volume_id_len);
+  msg.status = msg.status || '';
+  instance.status.innerText = msg.status;
 };
 
 ImageController.prototype.addInstance_ = function(type, hostname) {
@@ -151,6 +156,7 @@ ImageController.prototype.addInstance_ = function(type, hostname) {
   instance.next_volume_id = this.createNode_(instance.section, 'volumeID');
   instance.reboot = this.createNode_(instance.section, 'reboot', 'Reboot');
   instance.reboot_into = this.createNode_(instance.section, 'reboot', 'Reboot into');
+  instance.status = this.createNode_(instance.section, 'status');
 
   instance.volume_id.addEventListener(
       'click', (e) => this.onVolumeIDClick_(e.target.innerText));

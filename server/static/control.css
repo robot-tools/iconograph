@@ -80,7 +80,7 @@ header {
   padding: 2px;
 }
 
-hostname, lastReport, uptime, timestamp, volumeID, reboot, command {
+hostname, lastReport, uptime, timestamp, volumeID, reboot, command, status {
   font-family: "droid-sans-mono";
   display: table-cell;
   padding: 2px;
