@@ -23,6 +23,8 @@ ImageController.prototype.onMessage_ = function(msg) {
   switch (msg['type']) {
     case 'image_types':
       return this.onImageTypes_(msg['data']);
+    case 'new_manifest':
+      return this.onNewManfiest_(msg['data']);
     case 'report':
       return this.onReport_(msg['data']);
     case 'targets':
@@ -48,6 +50,7 @@ ImageController.prototype.addImageType_ = function(type) {
   let value = {
     section: document.createElement('imageTypeSection'),
     instances: new Map(),
+    images: [],
   };
   this.insertSorted_(this.container_, value.section, type);
   let headers = this.createNode_(value.section, 'headers');
@@ -59,11 +62,30 @@ ImageController.prototype.addImageType_ = function(type) {
   this.createNode_(headers, 'header', 'Next image');
   this.createNode_(headers, 'header', 'Next volume ID');
   this.image_types_.set(type, value);
+
+  this.fetchManifest_(type);
 };
 
 ImageController.prototype.removeImageType_ = function(type) {
   this.container_.removeChild(this.image_types_.get(type).section);
   this.image_types_.delete(type);
+};
+
+ImageController.prototype.onNewManifest_ = function(msg) {
+  this.fetchManifest_(msg['image_type']);
+};
+
+ImageController.prototype.fetchManifest_ = function(type) {
+  let xhr = new XMLHttpRequest();
+  xhr.addEventListener('load', (e) => this.onFetchManifest_(type, xhr.response));
+  xhr.responseType = 'json';
+  xhr.open('GET', 'https://' + location.host + '/image/' + type + '/manifest.json');
+  xhr.send();
+};
+
+ImageController.prototype.onFetchManifest_ = function(type, wrapper) {
+  let manifest = JSON.parse(wrapper.inner);
+  this.image_types_.get(type).images = manifest.images;
 };
 
 ImageController.prototype.onReport_ = function(msg) {
