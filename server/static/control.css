@@ -1,29 +1,74 @@
 body {
-  font-family: "proxima-nova", sans-serif;
-  color: #424242;
 }
 
-imageTypeSection {
+container {
+  font-family: "proxima-nova", sans-serif;
+  color: #424242;
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+}
+
+overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-height: 100%;
+  overflow: scroll;
+}
+
+instances, versions {
   display: table;
   border-spacing: 3px;
   margin: 10px;
 }
 
-imageTypeSection::before {
+instances::before, versions::before {
+  display: block;
   font-size: x-large;
   font-weight: bold;
   content: attr(data-key);
 }
 
-headers, instanceSection {
+versions {
+  display: none;
+  padding: 10px;
+  background: white;
+  border: 1px solid black;
+}
+
+versions.live {
+  display: table;
+  position: relative;
+}
+
+close {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  font-size: xx-large;
+  cursor: pointer;
+}
+
+versionList {
+  display: table-row-group;
+}
+
+headers, instance, version {
   display: table-row;
 }
 
-instanceSection:nth-child(2n) {
+instance:nth-child(2n) {
   background-color: #e9e9e9;
 }
 
-instanceSection:hover {
+instance:hover {
   background-color: #ff9900 !important;
 }
 
@@ -35,7 +80,7 @@ header {
   padding: 2px;
 }
 
-hostname, lastReport, uptime, timestamp, volumeID, reboot {
+hostname, lastReport, uptime, timestamp, volumeID, reboot, command {
   font-family: "droid-sans-mono";
   display: table-cell;
   padding: 2px;
@@ -46,7 +91,18 @@ volumeID {
   cursor: pointer;
 }
 
-instanceSection.live reboot {
+instance.live reboot {
   cursor: pointer;
   color: #3299bb;
+}
+
+command {
+  cursor: pointer;
+  color: #3299bb;
+}
+
+hostnameLabel {
+  font-family: "droid-sans-mono";
+  font-size: x-large;
+  font-weight: bold;
 }

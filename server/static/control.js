@@ -2,6 +2,7 @@
 
 let ImageController = function(container) {
   this.container_ = container;
+  this.overlay_ = this.createNode_(this.container_, 'overlay');
   this.image_types_ = new Map();
 
   this.connect_();
@@ -20,20 +21,20 @@ ImageController.prototype.onClose_ = function() {
 };
 
 ImageController.prototype.onMessage_ = function(msg) {
-  switch (msg['type']) {
+  switch (msg.type) {
     case 'image_types':
-      return this.onImageTypes_(msg['data']);
+      return this.onImageTypes_(msg.data);
     case 'new_manifest':
-      return this.onNewManfiest_(msg['data']);
+      return this.onNewManfiest_(msg.data);
     case 'report':
-      return this.onReport_(msg['data']);
+      return this.onReport_(msg.data);
     case 'targets':
-      return this.onTargets_(msg['data']);
+      return this.onTargets_(msg.data);
   }
 };
 
 ImageController.prototype.onImageTypes_ = function(msg) {
-  let image_types = new Set(msg['image_types']);
+  let image_types = new Set(msg.image_types);
   for (let type of image_types) {
     if (!this.image_types_.has(type)) {
       this.addImageType_(type);
@@ -46,14 +47,14 @@ ImageController.prototype.onImageTypes_ = function(msg) {
   };
 };
 
-ImageController.prototype.addImageType_ = function(type) {
-  let value = {
-    section: document.createElement('imageTypeSection'),
+ImageController.prototype.addImageType_ = function(name) {
+  let type = {
+    name: name,
+    section: document.createElement('instances'),
     instances: new Map(),
-    images: [],
   };
-  this.insertSorted_(this.container_, value.section, type);
-  let headers = this.createNode_(value.section, 'headers');
+  this.insertSorted_(this.container_, type.section, name);
+  let headers = this.createNode_(type.section, 'headers');
   this.createNode_(headers, 'header', 'Hostname');
   this.createNode_(headers, 'header', 'Last report');
   this.createNode_(headers, 'header', 'Uptime');
@@ -61,75 +62,110 @@ ImageController.prototype.addImageType_ = function(type) {
   this.createNode_(headers, 'header', 'Current volume ID');
   this.createNode_(headers, 'header', 'Next image');
   this.createNode_(headers, 'header', 'Next volume ID');
-  this.image_types_.set(type, value);
+
+  type.version_section = this.createNode_(this.overlay_, 'versions');
+  type.version_section.setAttribute('data-key', name);
+  type.version_hostname = this.createNode_(type.version_section, 'hostnameLabel');
+  let close = this.createNode_(type.version_section, 'close', '✗');
+  close.addEventListener(
+      'click', (e) => type.version_section.classList.remove('live'));
+
+  headers = this.createNode_(type.version_section, 'headers');
+  this.createNode_(headers, 'header', 'Image');
+  this.createNode_(headers, 'header', 'Volume ID');
+  type.versions = this.createNode_(type.version_section, 'versionList');
+
+  this.image_types_.set(name, type);
 
   this.fetchManifest_(type);
 };
 
 ImageController.prototype.removeImageType_ = function(type) {
-  this.container_.removeChild(this.image_types_.get(type).section);
-  this.image_types_.delete(type);
+  this.container_.removeChild(type.section);
+  this.image_types_.delete(type.name);
 };
 
 ImageController.prototype.onNewManifest_ = function(msg) {
-  this.fetchManifest_(msg['image_type']);
+  this.fetchManifest_(msg.image_type);
 };
 
 ImageController.prototype.fetchManifest_ = function(type) {
   let xhr = new XMLHttpRequest();
   xhr.addEventListener('load', (e) => this.onFetchManifest_(type, xhr.response));
   xhr.responseType = 'json';
-  xhr.open('GET', 'https://' + location.host + '/image/' + type + '/manifest.json');
+  xhr.open('GET', 'https://' + location.host + '/image/' + type.name + '/manifest.json');
   xhr.send();
 };
 
 ImageController.prototype.onFetchManifest_ = function(type, wrapper) {
   let manifest = JSON.parse(wrapper.inner);
-  this.image_types_.get(type).images = manifest.images;
+  let volume_id_len = localStorage.getItem('volume_id_len') || Number.POSITIVE_INFINITY;
+  type.versions.innerHTML = '';
+  for (let image of manifest.images) {
+    image.volume_id = image.volume_id || '';
+    let version = this.createNode_(type.versions, 'version');
+    this.createNode_(version, 'timestamp', image.timestamp);
+    let volume_id =
+        this.createNode_(version, 'volumeID', image.volume_id.substring(0, volume_id_len));
+    volume_id.addEventListener(
+        'click', (e) => this.onVolumeIDClick_(e.target.innerText));
+
+    let reboot_into = this.createNode_(version, 'command', 'Reboot into');
+    reboot_into.addEventListener(
+        'click', (e) => {
+            this.sendReboot_(type.version_hostname.innerText, image.timestamp);
+            type.version_section.classList.remove('live');
+        });
+  }
 };
 
 ImageController.prototype.onReport_ = function(msg) {
-  let type = this.image_types_.get(msg['image_type']);
-  if (!type.instances.has(msg['hostname'])) {
-    this.addInstance_(type, msg['hostname']);
+  let type = this.image_types_.get(msg.image_type);
+  if (!type.instances.has(msg.hostname)) {
+    this.addInstance_(type, msg.hostname);
   }
-  let instance = type.instances.get(msg['hostname']);
+  let instance = type.instances.get(msg.hostname);
   instance.last_report_timestamp = Math.floor(Date.now() / 1000);
   instance.last_report.innerText = this.formatSeconds_(0);
-  instance.uptime.innerText = this.formatSeconds_(msg['uptime_seconds']);
-  instance.timestamp.innerText = msg['timestamp'];
+  instance.uptime.innerText = this.formatSeconds_(msg.uptime_seconds);
+  instance.timestamp.innerText = msg.timestamp;
   let volume_id_len = localStorage.getItem('volume_id_len') || Number.POSITIVE_INFINITY;
-  instance.volume_id.innerText = msg['volume_id'].substring(0, volume_id_len);
-  instance.next_timestamp.innerText = msg['next_timestamp'];
-  instance.next_volume_id.innerText = msg['next_volume_id'].substring(0, volume_id_len);
+  msg.volume_id = msg.volume_id || '';
+  instance.volume_id.innerText = msg.volume_id.substring(0, volume_id_len);
+  instance.next_timestamp.innerText = msg.next_timestamp;
+  msg.next_volume_id = msg.next_volume_id || '';
+  instance.next_volume_id.innerText = msg.next_volume_id.substring(0, volume_id_len);
 };
 
 ImageController.prototype.addInstance_ = function(type, hostname) {
-  let value = {
-    section: document.createElement('instanceSection'),
+  let instance = {
+    section: document.createElement('instance'),
   };
-  this.insertSorted_(type.section, value.section, hostname);
-  this.createNode_(value.section, 'hostname', hostname);
-  value.last_report = this.createNode_(value.section, 'lastReport');
-  value.uptime = this.createNode_(value.section, 'uptime');
-  value.timestamp = this.createNode_(value.section, 'timestamp');
-  value.volume_id = this.createNode_(value.section, 'volumeID');
-  value.next_timestamp = this.createNode_(value.section, 'timestamp');
-  value.next_volume_id = this.createNode_(value.section, 'volumeID');
-  value.reboot = this.createNode_(value.section, 'reboot', 'Reboot');
+  this.insertSorted_(type.section, instance.section, hostname);
+  this.createNode_(instance.section, 'hostname', hostname);
+  instance.last_report = this.createNode_(instance.section, 'lastReport');
+  instance.uptime = this.createNode_(instance.section, 'uptime');
+  instance.timestamp = this.createNode_(instance.section, 'timestamp');
+  instance.volume_id = this.createNode_(instance.section, 'volumeID');
+  instance.next_timestamp = this.createNode_(instance.section, 'timestamp');
+  instance.next_volume_id = this.createNode_(instance.section, 'volumeID');
+  instance.reboot = this.createNode_(instance.section, 'reboot', 'Reboot');
+  instance.reboot_into = this.createNode_(instance.section, 'reboot', 'Reboot into');
 
-  value.volume_id.addEventListener(
+  instance.volume_id.addEventListener(
       'click', (e) => this.onVolumeIDClick_(e.target.innerText));
-  value.next_volume_id.addEventListener(
+  instance.next_volume_id.addEventListener(
       'click', (e) => this.onVolumeIDClick_(e.target.innerText));
-  value.reboot.addEventListener(
+  instance.reboot.addEventListener(
       'click', (e) => this.sendReboot_(hostname));
+  instance.reboot_into.addEventListener(
+      'click', (e) => this.onRebootIntoClick_(type, hostname));
 
-  type.instances.set(hostname, value);
+  type.instances.set(hostname, instance);
 };
 
 ImageController.prototype.onTargets_ = function(msg) {
-  let targets = new Set(msg['targets']);
+  let targets = new Set(msg.targets);
   for (let [type, type_value] of this.image_types_) {
     for (let [instance, instance_value] of type_value.instances) {
       if (targets.has(instance)) {
@@ -159,14 +195,23 @@ ImageController.prototype.onVolumeIDClick_ = function(volume_id) {
   open(base_url.replace('VOLUMEID', volume_id));
 };
 
-ImageController.prototype.sendReboot_ = function(hostname) {
-  this.ws_.send(JSON.stringify({
+ImageController.prototype.onRebootIntoClick_ = function(type, hostname) {
+  type.version_hostname.innerText = hostname;
+  type.version_section.classList.add('live');
+};
+
+ImageController.prototype.sendReboot_ = function(hostname, opt_timestamp) {
+  let command = {
     'type': 'command',
     'target': hostname,
     'data': {
       'command': 'reboot',
     },
-  }));
+  };
+  if (opt_timestamp) {
+    command.data.timestamp = opt_timestamp;
+  }
+  this.ws_.send(JSON.stringify(command));
 };
 
 ImageController.prototype.insertSorted_ = function(parent, new_child, key) {
@@ -208,5 +253,5 @@ ImageController.prototype.formatSeconds_ = function(seconds) {
 
 
 document.addEventListener('DOMContentLoaded', (e) => {
-  new ImageController(document.getElementsByTagName('imageContainer')[0]);
+  new ImageController(document.getElementsByTagName('container')[0]);
 });
