@@ -25,7 +25,7 @@ ImageController.prototype.onMessage_ = function(msg) {
     case 'image_types':
       return this.onImageTypes_(msg.data);
     case 'new_manifest':
-      return this.onNewManfiest_(msg.data);
+      return this.onNewManifest_(msg.data);
     case 'report':
       return this.onReport_(msg.data);
     case 'targets':
