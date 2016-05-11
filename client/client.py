@@ -128,7 +128,7 @@ class Client(threadedclient.WebSocketClient):
       self._OnReboot(data)
 
   def _OnReboot(self, data):
-    if data['timestamp']:
+    if 'timestamp' in data:
       fetch = self._GetFetcher()
       fetch.Fetch(data['timestamp'])
       self._UpdateGrub()
