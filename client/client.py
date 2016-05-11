@@ -97,14 +97,17 @@ class Client(threadedclient.WebSocketClient):
       return
     self._OnNewManifest2()
 
-  def _OnNewManifest2(self):
-    fetch = fetcher.Fetcher(
+  def _GetFetcher(self):
+    return fetcher.Fetcher(
         'https://%s/image/%s' % (FLAGS.server, self._config['image_type']),
         FLAGS.ca_cert,
         FLAGS.image_dir,
         FLAGS.https_ca_cert,
         FLAGS.https_client_cert,
         FLAGS.https_client_key)
+
+  def _OnNewManifest2(self):
+    fetch = self._GetFetcher()
     fetch.Fetch()
     fetch.DeleteOldImages(skip={'%d.iso' % self._config['timestamp']})
 
@@ -115,7 +118,14 @@ class Client(threadedclient.WebSocketClient):
 
   def _OnCommand(self, data):
     if data['command'] == 'reboot':
-      subprocess.check_call(['reboot'])
+      self._OnReboot(data)
+
+  def _OnReboot(self, data):
+    if data['timestamp']:
+      fetch = self._GetFetcher()
+      fetch.Fetch(data['timestamp'])
+
+    subprocess.check_call(['reboot'])
 
   def received_message(self, msg):
     parsed = json.loads(msg.data.decode('utf8'))

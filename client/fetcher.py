@@ -107,6 +107,12 @@ class Fetcher(object):
     with open(path, 'w') as fh:
       json.dump(new_manifest, fh, indent=4)
 
+  def _FindImage(self, manifest, timestamp):
+    for image in manifest['images']:
+      if image['timestamp'] == timestamp:
+        return image
+    raise NoValidImage
+
   def _ChooseImage(self, manifest):
     hostname = socket.gethostname()
     hash_base = hashlib.sha256(hostname.encode('ascii'))
@@ -160,9 +166,12 @@ class Fetcher(object):
     os.symlink(filename, temp_path)
     os.rename(temp_path, current_path)
 
-  def Fetch(self):
+  def Fetch(self, force_timestamp=None):
     manifest = self._GetManifest()
-    image = self._ChooseImage(manifest)
+    if force_timestamp:
+      image = self._FindImage(manifest, timestamp)
+    else:
+      image = self._ChooseImage(manifest)
     self._FetchImage(image)
     self._SetCurrent(image)
 
