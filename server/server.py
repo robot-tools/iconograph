@@ -58,6 +58,7 @@ class WebSockets(object):
   def __init__(self):
     self.slaves = set()
     self.masters = set()
+    self.targets = {}
 
   def __iter__(self):
     return iter(self.slaves | self.masters)
@@ -66,7 +67,7 @@ class WebSockets(object):
   def Broadcast(targets, msg):
     msgstr = json.dumps(msg)
     for target in targets:
-      target.send(msgstr, False)
+      target.send(msgstr)
 
 
 class BaseWSHandler(websocket.WebSocket):
@@ -76,10 +77,12 @@ class BaseWSHandler(websocket.WebSocket):
       'data': {
         'image_types': list(image_types),
       },
-    }), False)
+    }))
 
 
 def GetSlaveWSHandler(image_types, websockets):
+  _hostname = None
+
   class SlaveWSHandler(BaseWSHandler):
     def opened(self):
       super().opened(image_types)
@@ -87,6 +90,8 @@ def GetSlaveWSHandler(image_types, websockets):
 
     def closed(self, code, reason=None):
       websockets.slaves.remove(self)
+      if self._hostname:
+        del websockets.targets[self._hostname]
 
     def received_message(self, msg):
       parsed = json.loads(str(msg))
@@ -99,6 +104,10 @@ def GetSlaveWSHandler(image_types, websockets):
           'data': parsed['data'],
         }
         websockets.Broadcast(websockets.masters, newmsg)
+
+        if 'hostname' in parsed['data']:
+          self._hostname = parsed['data']['hostname']
+          websockets.targets[self._hostname] = self
 
   return SlaveWSHandler
 
@@ -113,7 +122,20 @@ def GetMasterWSHandler(image_types, websockets):
       websockets.masters.remove(self)
 
     def received_message(self, msg):
-      pass
+      parsed = json.loads(str(msg))
+      if parsed['type'] == 'command':
+        target = parsed['target']
+        if target not in websockets.targets:
+          return
+        newmsg = {
+          'type': 'command',
+          'target': target,
+          'id': str(uuid.uuid4()),
+          'received': int(time.time()),
+          'client': self.peer_address,
+          'data': parsed['data'],
+        }
+        websockets.targets[target].send(json.dumps(newmsg))
 
   return MasterWSHandler
 
