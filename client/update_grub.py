@@ -23,23 +23,17 @@ class GrubUpdater(object):
 
     with tempfile.NamedTemporaryFile('w', dir=grub_dir, delete=False) as fh:
       try:
-        current = lib.GetCurrentImage(self._image_dir)
-
-        fh.write("""
-set timeout=5
-set default="%(default_image_filename)s (%(default_volume_id)s)"
-""" % {
-          'default_image_filename': current,
-          'default_volume_id': lib.GetVolumeID(os.path.join(self._image_dir, current)),
-        })
-
         files = []
         for filename in os.listdir(self._image_dir):
           if not filename.endswith('.iso'):
             continue
           files.append(filename)
 
+        default_entry = None
+        current = lib.GetCurrentImage(self._image_dir)
         for i, filename in enumerate(sorted(files, reverse=True)):
+          if filename == current:
+            default_entry = i
           fh.write("""
 menuentry "%(image_filename)s (%(volume_id)s)" --hotkey=%(hotkey)s {
   search --no-floppy --file --set=root %(image_path)s/%(image_filename)s
@@ -55,6 +49,13 @@ menuentry "%(image_filename)s (%(volume_id)s)" --hotkey=%(hotkey)s {
             'hotkey': self._HOTKEYS[i],
             'volume_id': lib.GetVolumeID(os.path.join(self._image_dir, filename)),
           })
+
+        fh.write("""
+set timeout=5
+set default=%(default_entry)d
+""" % {
+          'default_entry': default_entry,
+        })
 
         fh.flush()
         os.rename(fh.name, os.path.join(grub_dir, 'grub.cfg'))
