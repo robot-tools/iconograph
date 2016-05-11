@@ -27,9 +27,10 @@ class GrubUpdater(object):
 
         fh.write("""
 set timeout=5
-set default=%(default_image_filename)s
+set default="%(default_image_filename)s (%(default_volume_id)s)"
 """ % {
           'default_image_filename': current,
+          'default_volume_id': lib.GetVolumeID(os.path.join(self._image_dir, current)),
         })
 
         files = []
