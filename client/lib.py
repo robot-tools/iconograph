@@ -1,3 +1,4 @@
+import os
 import re
 import subprocess
 
@@ -13,3 +14,8 @@ def GetVolumeID(path):
   ])
   match = _VOLUME_ID_REGEX.search(isoinfo)
   return match.group('volume_id').decode('ascii')
+
+
+def GetCurrentImage(image_dir='/isodevice/iconograph'):
+  current_path = os.path.join(image_dir, 'current')
+  return os.path.basename(os.readlink(current_path))

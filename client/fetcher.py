@@ -166,9 +166,10 @@ class Fetcher(object):
     self._FetchImage(image)
     self._SetCurrent(image)
 
-  def DeleteOldImages(self, max_images=5):
+  def DeleteOldImages(self, max_images=5, skip=None):
     if not max_images:
       return
+    skip = skip or set()
     images = []
     for filename in os.listdir(self._image_dir):
       match = self._FILE_REGEX.match(filename)
@@ -177,6 +178,8 @@ class Fetcher(object):
       images.append((int(match.group('timestamp')), filename))
     images.sort(reverse=True)
     for timestamp, filename in images[max_images:]:
+      if filename in skip:
+        continue
       print('Deleting old image:', filename, flush=True)
       path = os.path.join(self._image_dir, filename)
       os.unlink(path)

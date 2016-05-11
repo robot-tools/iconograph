@@ -23,13 +23,13 @@ class GrubUpdater(object):
 
     with tempfile.NamedTemporaryFile('w', dir=grub_dir, delete=False) as fh:
       try:
-        current = os.readlink(os.path.join(self._image_dir, 'current'))
+        current = lib.GetCurrentImage(self._image_dir)
 
         fh.write("""
 set timeout=5
 set default=%(default_image_filename)s
 """ % {
-          'default_image_filename': os.path.basename(current),
+          'default_image_filename': current,
         })
 
         files = []

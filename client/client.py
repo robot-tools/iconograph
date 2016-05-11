@@ -86,7 +86,7 @@ class Client(threadedclient.WebSocketClient):
       return int(float(fh.readline().split(' ', 1)[0]))
 
   def _NextTimestamp(self):
-    next_image = os.path.basename(os.readlink('/isodevice/iconograph/current'))
+    next_image = lib.GetCurrentImage()
     return int(next_image.split('.', 1)[0])
 
   def _OnImageTypes(self, data):
@@ -106,7 +106,7 @@ class Client(threadedclient.WebSocketClient):
         FLAGS.https_client_cert,
         FLAGS.https_client_key)
     fetch.Fetch()
-    fetch.DeleteOldImages()
+    fetch.DeleteOldImages(skip={'%d.iso' % self._config['timestamp']})
 
     update = update_grub.GrubUpdater(
         FLAGS.image_dir,
