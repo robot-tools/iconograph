@@ -68,18 +68,21 @@ class Client(threadedclient.WebSocketClient):
     self.connect()
     self._OnNewManifest2()
     while True:
-      report = {
-        'hostname': socket.gethostname(),
-        'uptime_seconds': self._Uptime(),
-        'next_timestamp': self._NextTimestamp(),
-        'next_volume_id': lib.GetVolumeID('/isodevice/iconograph/current'),
-      }
-      report.update(self._config)
-      self.send(json.dumps({
-        'type': 'report',
-        'data': report,
-      }), False)
+      self._SendReport()
       time.sleep(5.0)
+
+  def _SendReport(self):
+    report = {
+      'hostname': socket.gethostname(),
+      'uptime_seconds': self._Uptime(),
+      'next_timestamp': self._NextTimestamp(),
+      'next_volume_id': lib.GetVolumeID('/isodevice/iconograph/current'),
+    }
+    report.update(self._config)
+    self.send(json.dumps({
+      'type': 'report',
+      'data': report,
+    }))
 
   def _Uptime(self):
     with open('/proc/uptime', 'r') as fh:
@@ -128,6 +131,7 @@ class Client(threadedclient.WebSocketClient):
       fetch.Fetch(data['timestamp'])
       self._UpdateGrub()
 
+    self._SendReport()
     subprocess.check_call(['reboot'])
 
   def received_message(self, msg):
