@@ -42,15 +42,11 @@ hostname, lastReport, uptime, timestamp, volumeID, reboot {
   text-align: right;
 }
 
-instanceSection.live hostname {
-  color: #3299bb;
-}
-
 volumeID {
   cursor: pointer;
 }
 
-reboot {
+instanceSection.live reboot {
   cursor: pointer;
   color: #3299bb;
 }
