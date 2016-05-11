@@ -4,10 +4,19 @@ let ImageController = function(container) {
   this.container_ = container;
   this.image_types_ = new Map();
 
-  this.ws_ = new WebSocket('wss://' + location.host + '/ws/master', 'iconograph-master');
-  this.ws_.addEventListener('message', (e) => this.onMessage_(JSON.parse(e.data)));
+  this.connect_();
 
   this.timer_ = setInterval((e) => this.onTick_(), 250);
+};
+
+ImageController.prototype.connect_ = function() {
+  this.ws_ = new WebSocket('wss://' + location.host + '/ws/master', 'iconograph-master');
+  this.ws_.addEventListener('message', (e) => this.onMessage_(JSON.parse(e.data)));
+  this.ws_.addEventListener('close', (e) => this.onClose_());
+};
+
+ImageController.prototype.onClose_ = function() {
+  setTimeout((e) => this.connect_(), 5000);
 };
 
 ImageController.prototype.onMessage_ = function(msg) {
@@ -83,10 +92,15 @@ ImageController.prototype.addInstance_ = function(type, hostname) {
   value.volume_id = this.createNode_(value.section, 'volumeID');
   value.next_timestamp = this.createNode_(value.section, 'timestamp');
   value.next_volume_id = this.createNode_(value.section, 'volumeID');
+  value.reboot = this.createNode_(value.section, 'reboot', 'Reboot');
+
   value.volume_id.addEventListener(
       'click', (e) => this.onVolumeIDClick_(e.target.innerText));
   value.next_volume_id.addEventListener(
       'click', (e) => this.onVolumeIDClick_(e.target.innerText));
+  value.reboot.addEventListener(
+      'click', (e) => this.sendReboot_(hostname));
+
   type.instances.set(hostname, value);
 };
 
@@ -106,6 +120,16 @@ ImageController.prototype.onVolumeIDClick_ = function(volume_id) {
     return;
   }
   open(base_url.replace('VOLUMEID', volume_id));
+};
+
+ImageController.prototype.sendReboot_ = function(hostname) {
+  this.ws_.send(JSON.stringify({
+    'type': 'command',
+    'target': hostname,
+    'data': {
+      'command': 'reboot',
+    },
+  }));
 };
 
 ImageController.prototype.insertSorted_ = function(parent, new_child, key) {
