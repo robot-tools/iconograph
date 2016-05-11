@@ -134,7 +134,7 @@ class Client(threadedclient.WebSocketClient):
       self._UpdateGrub()
       self._SendReport('Rebooting into %d...' % data['timestamp'])
     else:
-      send._SendReport('Rebooting...')
+      self._SendReport('Rebooting...')
 
     subprocess.check_call(['reboot'])
 
