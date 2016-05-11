@@ -87,7 +87,7 @@ ImageController.prototype.removeImageType_ = function(type) {
 };
 
 ImageController.prototype.onNewManifest_ = function(msg) {
-  this.fetchManifest_(msg.image_type);
+  this.fetchManifest_(this.image_types_.get(msg.image_type));
 };
 
 ImageController.prototype.fetchManifest_ = function(type) {
