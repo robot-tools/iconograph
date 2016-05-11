@@ -71,13 +71,15 @@ class Client(threadedclient.WebSocketClient):
       self._SendReport()
       time.sleep(5.0)
 
-  def _SendReport(self):
+  def _SendReport(self, status=None):
     report = {
       'hostname': socket.gethostname(),
       'uptime_seconds': self._Uptime(),
       'next_timestamp': self._NextTimestamp(),
       'next_volume_id': lib.GetVolumeID('/isodevice/iconograph/current'),
     }
+    if status:
+      report['status'] = status
     report.update(self._config)
     self.send(json.dumps({
       'type': 'report',
@@ -130,8 +132,10 @@ class Client(threadedclient.WebSocketClient):
       fetch = self._GetFetcher()
       fetch.Fetch(data['timestamp'])
       self._UpdateGrub()
+      self._SendReport('Rebooting into %d...' % data['timestamp'])
+    else:
+      send._SendReport('Rebooting...')
 
-    self._SendReport()
     subprocess.check_call(['reboot'])
 
   def received_message(self, msg):
