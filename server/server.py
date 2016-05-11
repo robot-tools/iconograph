@@ -5,6 +5,7 @@ import json
 import os
 import pyinotify
 import ssl
+import subprocess
 import sys
 import threading
 import time
@@ -51,6 +52,10 @@ parser.add_argument(
     dest='server_cert',
     action='store',
     required=True)
+parser.add_argument(
+    '--exec-handler',
+    dest='exec_handlers',
+    action='append')
 FLAGS = parser.parse_args()
 
 
@@ -184,11 +189,12 @@ class HTTPRequestHandler(object):
   }
   _BLOCK_SIZE = 2 ** 16
 
-  def __init__(self, image_path, image_types, websockets):
+  def __init__(self, image_path, image_types, exec_handlers, websockets):
     self._static_path = os.path.join(os.path.dirname(sys.argv[0]), 'static')
 
     self._image_path = image_path
     self._image_types = image_types
+    self._exec_handlers = exec_handlers
 
     slave_ws_handler = GetSlaveWSHandler(image_types, websockets)
     self._slave_ws_handler = wsgiutils.WebSocketWSGIApplication(
@@ -212,6 +218,9 @@ class HTTPRequestHandler(object):
     elif path.startswith('/static/'):
       file_name = path[8:]
       return self._ServeStaticFile(start_response, file_name)
+    elif path.startswith('/exec/'):
+      method = path[6:]
+      return self._ServeExec(start_response, method, env['QUERY_STRING'])
     elif path == '/ws/slave':
       return self._slave_ws_handler(env, start_response)
     elif path == '/ws/master':
@@ -259,10 +268,23 @@ class HTTPRequestHandler(object):
       start_response('404 Not found')
       return []
 
+  def _ServeExec(self, start_response, method, arg):
+    handler = self._exec_handlers[method]
+    start_response('200 OK', [])
+    proc = subprocess.Popen(
+        [handler, arg],
+        stdout=subprocess.PIPE)
+    while True:
+      block = proc.stdout.read(self._BLOCK_SIZE)
+      if len(block) == 0:
+        break
+      yield block
+    proc.wait()
+
 
 class Server(object):
 
-  def __init__(self, listen_host, listen_port, server_key, server_cert, ca_cert, image_path, image_types):
+  def __init__(self, listen_host, listen_port, server_key, server_cert, ca_cert, image_path, image_types, exec_handlers):
     websockets = WebSockets()
 
     wm = pyinotify.WatchManager()
@@ -272,7 +294,8 @@ class Server(object):
       type_path = os.path.join(image_path, image_type)
       wm.add_watch(type_path, pyinotify.IN_MOVED_TO)
 
-    http_handler = HTTPRequestHandler(image_path, image_types, websockets)
+    exec_handlers = dict(x.split('=', 1) for x in (exec_handlers or []))
+    http_handler = HTTPRequestHandler(image_path, image_types, exec_handlers, websockets)
     self._httpd = geventserver.WSGIServer(
         (listen_host, listen_port),
         http_handler,
@@ -297,7 +320,8 @@ def main():
       FLAGS.server_cert,
       FLAGS.ca_cert,
       FLAGS.image_path,
-      set(FLAGS.image_types))
+      set(FLAGS.image_types),
+      FLAGS.exec_handlers)
   server.Serve()
 
 
