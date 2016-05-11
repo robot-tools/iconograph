@@ -169,7 +169,7 @@ class Fetcher(object):
   def Fetch(self, force_timestamp=None):
     manifest = self._GetManifest()
     if force_timestamp:
-      image = self._FindImage(manifest, timestamp)
+      image = self._FindImage(manifest, force_timestamp)
     else:
       image = self._ChooseImage(manifest)
     self._FetchImage(image)
