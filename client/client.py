@@ -106,15 +106,17 @@ class Client(threadedclient.WebSocketClient):
         FLAGS.https_client_cert,
         FLAGS.https_client_key)
 
-  def _OnNewManifest2(self):
-    fetch = self._GetFetcher()
-    fetch.Fetch()
-    fetch.DeleteOldImages(skip={'%d.iso' % self._config['timestamp']})
-
+  def _UpdateGrub(self):
     update = update_grub.GrubUpdater(
         FLAGS.image_dir,
         FLAGS.boot_dir)
     update.Update()
+
+  def _OnNewManifest2(self):
+    fetch = self._GetFetcher()
+    fetch.Fetch()
+    fetch.DeleteOldImages(skip={'%d.iso' % self._config['timestamp']})
+    self._UpdateGrub()
 
   def _OnCommand(self, data):
     if data['command'] == 'reboot':
@@ -124,6 +126,7 @@ class Client(threadedclient.WebSocketClient):
     if data['timestamp']:
       fetch = self._GetFetcher()
       fetch.Fetch(data['timestamp'])
+      self._UpdateGrub()
 
     subprocess.check_call(['reboot'])
 
