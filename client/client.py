@@ -124,12 +124,18 @@ class Client(threadedclient.WebSocketClient):
         FLAGS.boot_dir)
     update.Update()
 
+  def _OnCommand(self, data):
+    if data['command'] == 'reboot':
+      subprocess.check_call(['reboot'])
+
   def received_message(self, msg):
     parsed = json.loads(msg.data.decode('utf8'))
     if parsed['type'] == 'image_types':
       self._OnImageTypes(parsed['data'])
     elif parsed['type'] == 'new_manifest':
       self._OnNewManifest(parsed['data'])
+    elif parsed['type'] == 'command':
+      self._OnCommand(parsed['data'])
 
 
 def main():
