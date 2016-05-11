@@ -89,6 +89,7 @@ hostname, lastReport, uptime, timestamp, volumeID, reboot, command, status {
 
 status {
   min-width: 20em;
+  text-align: left;
 }
 
 volumeID {
