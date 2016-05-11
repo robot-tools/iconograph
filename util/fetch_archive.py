@@ -53,6 +53,7 @@ class ArchiveFetcher(object):
         cwd=dest_dir)
     for data in resp.iter_content(self._BUF_SIZE):
       tar.stdin.write(data)
+    tar.stdin.close()
     tar.wait()
 
 
