@@ -39,6 +39,14 @@ ImageController.prototype.addImageType_ = function(type) {
     instances: new Map(),
   };
   this.insertSorted_(this.container_, value.section, type);
+  let headers = this.createNode_(value.section, 'headers');
+  this.createNode_(headers, 'header', 'Hostname');
+  this.createNode_(headers, 'header', 'Last seen');
+  this.createNode_(headers, 'header', 'Uptime');
+  this.createNode_(headers, 'header', 'Current image');
+  this.createNode_(headers, 'header', 'Current volume ID');
+  this.createNode_(headers, 'header', 'Next image');
+  this.createNode_(headers, 'header', 'Next volume ID');
   this.image_types_.set(type, value);
 };
 
@@ -57,9 +65,10 @@ ImageController.prototype.onReport_ = function(msg) {
   instance.last_seen.innerText = this.formatSeconds_(0);
   instance.uptime.innerText = this.formatSeconds_(msg['uptime_seconds']);
   instance.timestamp.innerText = msg['timestamp'];
-  instance.volume_id.innerText = msg['volume_id'];
+  let volume_id_len = localStorage.getItem('volume_id_len') || Number.POSITIVE_INFINITY;
+  instance.volume_id.innerText = msg['volume_id'].substring(0, volume_id_len);
   instance.next_timestamp.innerText = msg['next_timestamp'];
-  instance.next_volume_id.innerText = msg['next_volume_id'];
+  instance.next_volume_id.innerText = msg['next_volume_id'].substring(0, volume_id_len);
 };
 
 ImageController.prototype.addInstance_ = function(type, hostname) {

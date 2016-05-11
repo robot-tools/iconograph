@@ -6,6 +6,7 @@ body {
 imageTypeSection {
   display: table;
   border-spacing: 3px;
+  margin: 10px;
 }
 
 imageTypeSection::before {
@@ -14,11 +15,11 @@ imageTypeSection::before {
   content: attr(data-key);
 }
 
-instanceSection {
+headers, instanceSection {
   display: table-row;
 }
 
-instanceSection:nth-child(2n+1) {
+instanceSection:nth-child(2n) {
   background-color: #e9e9e9;
 }
 
@@ -26,10 +27,19 @@ instanceSection:hover {
   background-color: #ff9900 !important;
 }
 
+header {
+  display: table-cell;
+  text-align: center;
+  color: #bcbcbc;
+  white-space: nowrap;
+  padding: 2px;
+}
+
 hostname, lastSeen, uptime, timestamp, volumeID {
   font-family: "droid-sans-mono";
   display: table-cell;
   padding: 2px;
+  text-align: right;
 }
 
 volumeID {
