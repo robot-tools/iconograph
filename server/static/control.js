@@ -62,8 +62,6 @@ ImageController.prototype.addImageType_ = function(name) {
   this.createNode_(headers, 'header', 'Current volume ID');
   this.createNode_(headers, 'header', 'Next image');
   this.createNode_(headers, 'header', 'Next volume ID');
-  this.createNode_(headers, 'header'); // Reboot
-  this.createNode_(headers, 'header'); // Reboot into
   this.createNode_(headers, 'header', 'Status');
 
   type.version_section = this.createNode_(this.overlay_, 'versions');
@@ -154,9 +152,9 @@ ImageController.prototype.addInstance_ = function(type, hostname) {
   instance.volume_id = this.createNode_(instance.section, 'volumeID');
   instance.next_timestamp = this.createNode_(instance.section, 'timestamp');
   instance.next_volume_id = this.createNode_(instance.section, 'volumeID');
+  instance.status = this.createNode_(instance.section, 'status');
   instance.reboot = this.createNode_(instance.section, 'reboot', 'Reboot');
   instance.reboot_into = this.createNode_(instance.section, 'reboot', 'Reboot into');
-  instance.status = this.createNode_(instance.section, 'status');
 
   instance.volume_id.addEventListener(
       'click', (e) => this.onVolumeIDClick_(e.target.innerText));
