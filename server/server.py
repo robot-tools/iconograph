@@ -69,6 +69,14 @@ class WebSockets(object):
     for target in targets:
       target.send(msgstr)
 
+  def BroadcastTargets(self):
+    self.Broadcast(self.masters, {
+      'type': 'targets',
+      'data': {
+        'targets': list(self.targets.keys()),
+      },
+    })
+
 
 class BaseWSHandler(websocket.WebSocket):
   def opened(self, image_types):
@@ -92,6 +100,7 @@ def GetSlaveWSHandler(image_types, websockets):
       websockets.slaves.remove(self)
       if self._hostname:
         del websockets.targets[self._hostname]
+        websockets.BroadcastTargets()
 
     def received_message(self, msg):
       parsed = json.loads(str(msg))
@@ -108,6 +117,7 @@ def GetSlaveWSHandler(image_types, websockets):
         if 'hostname' in parsed['data']:
           self._hostname = parsed['data']['hostname']
           websockets.targets[self._hostname] = self
+          websockets.BroadcastTargets()
 
   return SlaveWSHandler
 
@@ -117,6 +127,12 @@ def GetMasterWSHandler(image_types, websockets):
     def opened(self):
       super().opened(image_types)
       websockets.masters.add(self)
+      self.send(json.dumps({
+        'type': 'targets',
+        'data': {
+          'targets': list(websockets.targets.keys()),
+        },
+      }))
 
     def closed(self, code, reason=None):
       websockets.masters.remove(self)

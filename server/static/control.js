@@ -25,6 +25,8 @@ ImageController.prototype.onMessage_ = function(msg) {
       return this.onImageTypes_(msg['data']);
     case 'report':
       return this.onReport_(msg['data']);
+    case 'targets':
+      return this.onTargets_(msg['data']);
   }
 };
 
@@ -50,7 +52,7 @@ ImageController.prototype.addImageType_ = function(type) {
   this.insertSorted_(this.container_, value.section, type);
   let headers = this.createNode_(value.section, 'headers');
   this.createNode_(headers, 'header', 'Hostname');
-  this.createNode_(headers, 'header', 'Last seen');
+  this.createNode_(headers, 'header', 'Last report');
   this.createNode_(headers, 'header', 'Uptime');
   this.createNode_(headers, 'header', 'Current image');
   this.createNode_(headers, 'header', 'Current volume ID');
@@ -70,8 +72,8 @@ ImageController.prototype.onReport_ = function(msg) {
     this.addInstance_(type, msg['hostname']);
   }
   let instance = type.instances.get(msg['hostname']);
-  instance.last_report = Math.floor(Date.now() / 1000);
-  instance.last_seen.innerText = this.formatSeconds_(0);
+  instance.last_report_timestamp = Math.floor(Date.now() / 1000);
+  instance.last_report.innerText = this.formatSeconds_(0);
   instance.uptime.innerText = this.formatSeconds_(msg['uptime_seconds']);
   instance.timestamp.innerText = msg['timestamp'];
   let volume_id_len = localStorage.getItem('volume_id_len') || Number.POSITIVE_INFINITY;
@@ -86,7 +88,7 @@ ImageController.prototype.addInstance_ = function(type, hostname) {
   };
   this.insertSorted_(type.section, value.section, hostname);
   this.createNode_(value.section, 'hostname', hostname);
-  value.last_seen = this.createNode_(value.section, 'lastSeen');
+  value.last_report = this.createNode_(value.section, 'lastReport');
   value.uptime = this.createNode_(value.section, 'uptime');
   value.timestamp = this.createNode_(value.section, 'timestamp');
   value.volume_id = this.createNode_(value.section, 'volumeID');
@@ -104,12 +106,25 @@ ImageController.prototype.addInstance_ = function(type, hostname) {
   type.instances.set(hostname, value);
 };
 
+ImageController.prototype.onTargets_ = function(msg) {
+  let targets = new Set(msg['targets']);
+  for (let [type, type_value] of this.image_types_) {
+    for (let [instance, instance_value] of type_value.instances) {
+      if (targets.has(instance)) {
+        instance_value.section.classList.add('live');
+      } else {
+        instance_value.section.classList.remove('live');
+      }
+    }
+  }
+};
+
 ImageController.prototype.onTick_ = function() {
   let now = Math.floor(Date.now() / 1000);
-  for (let [type, type_section] of this.image_types_) {
-    for (let [instance, instance_section] of type_section.instances) {
-      instance_section.last_seen.innerText =
-          this.formatSeconds_(now - instance_section.last_report);
+  for (let [type, type_value] of this.image_types_) {
+    for (let [instance, instance_value] of type_value.instances) {
+      instance_value.last_report.innerText =
+          this.formatSeconds_(now - instance_value.last_report_timestamp);
     }
   }
 };

@@ -35,11 +35,15 @@ header {
   padding: 2px;
 }
 
-hostname, lastSeen, uptime, timestamp, volumeID, reboot {
+hostname, lastReport, uptime, timestamp, volumeID, reboot {
   font-family: "droid-sans-mono";
   display: table-cell;
   padding: 2px;
   text-align: right;
+}
+
+instanceSection.live hostname {
+  color: #3299bb;
 }
 
 volumeID {
