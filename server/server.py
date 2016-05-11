@@ -252,7 +252,7 @@ class HTTPRequestHandler(object):
             break
           yield block
     except FileNotFoundError:
-      start_response('404 Not found')
+      start_response('404 Not found', [('Content-Type', 'text/plain')])
       return []
 
   def _ServeStaticFile(self, start_response, file_name):
@@ -265,7 +265,7 @@ class HTTPRequestHandler(object):
         start_response('200 OK', [('Content-Type', self._MIMEType(file_name))])
         return [fh.read()]
     except FileNotFoundError:
-      start_response('404 Not found')
+      start_response('404 Not found', [('Content-Type', 'text/plain')])
       return []
 
   def _ServeExec(self, start_response, method, arg):
