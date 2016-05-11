@@ -3,8 +3,8 @@
 import argparse
 import fetcher
 import json
+import lib
 import os
-import re
 import socket
 import subprocess
 import time
@@ -58,8 +58,6 @@ FLAGS = parser.parse_args()
 
 class Client(threadedclient.WebSocketClient):
 
-  _VOLUME_ID_REGEX = re.compile(b'^Volume id: (?P<volume_id>.+)$', re.MULTILINE)
-
   def __init__(self, config_path, *args, **kwargs):
     super().__init__(*args, **kwargs)
     with open(config_path, 'r') as fh:
@@ -74,7 +72,7 @@ class Client(threadedclient.WebSocketClient):
         'hostname': socket.gethostname(),
         'uptime_seconds': self._Uptime(),
         'next_timestamp': self._NextTimestamp(),
-        'next_volume_id': self._GetVolumeID('/isodevice/iconograph/current'),
+        'next_volume_id': lib.GetVolumeID('/isodevice/iconograph/current'),
       }
       report.update(self._config)
       self.send(json.dumps({
@@ -90,15 +88,6 @@ class Client(threadedclient.WebSocketClient):
   def _NextTimestamp(self):
     next_image = os.path.basename(os.readlink('/isodevice/iconograph/current'))
     return int(next_image.split('.', 1)[0])
-
-  def _GetVolumeID(self, path):
-    isoinfo = subprocess.check_output([
-      'isoinfo',
-      '-d',
-      '-i', path,
-    ])
-    match = self._VOLUME_ID_REGEX.search(isoinfo)
-    return match.group('volume_id').decode('ascii')
 
   def _OnImageTypes(self, data):
     assert self._config['image_type'] in data['image_types']
