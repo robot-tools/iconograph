@@ -53,6 +53,10 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
+    '--static-path',
+    dest='static_paths',
+    action='append')
+parser.add_argument(
     '--exec-handler',
     dest='exec_handlers',
     action='append')
@@ -185,16 +189,17 @@ class HTTPRequestHandler(object):
     '.iso': 'application/octet-stream',
     '.js': 'application/javascript',
     '.json': 'application/json',
+    '.tar': 'application/x-tar',
     '.woff': 'application/font-woff',
   }
   _BLOCK_SIZE = 2 ** 16
 
-  def __init__(self, image_path, image_types, exec_handlers, websockets):
-    self._static_path = os.path.join(os.path.dirname(sys.argv[0]), 'static')
-
+  def __init__(self, image_path, image_types, exec_handlers, static_paths, websockets):
     self._image_path = image_path
     self._image_types = image_types
     self._exec_handlers = exec_handlers
+    self._static_paths = static_paths
+    self._static_paths['static'] = os.path.join(os.path.dirname(sys.argv[0]), 'static')
 
     slave_ws_handler = GetSlaveWSHandler(image_types, websockets)
     self._slave_ws_handler = wsgiutils.WebSocketWSGIApplication(
@@ -212,12 +217,14 @@ class HTTPRequestHandler(object):
     if path == '/':
       path = '/static/root.html'
 
+    for url, file_path in self._static_paths.items():
+      if path.startswith('/%s/' % url):
+        file_name = path[len(url) + 2:]
+        return self._ServeStaticFile(start_response, file_path, file_name)
+
     if path.startswith('/image/'):
       image_type, image_name = path[7:].split('/', 1)
       return self._ServeImageFile(start_response, image_type, image_name)
-    elif path.startswith('/static/'):
-      file_name = path[8:]
-      return self._ServeStaticFile(start_response, file_name)
     elif path.startswith('/exec/'):
       method = path[6:]
       return self._ServeExec(start_response, method, env['QUERY_STRING'])
@@ -255,13 +262,13 @@ class HTTPRequestHandler(object):
       start_response('404 Not found', [('Content-Type', 'text/plain')])
       return []
 
-  def _ServeStaticFile(self, start_response, file_name):
+  def _ServeStaticFile(self, start_response, file_path, file_name):
     file_name = os.path.basename(file_name)
     assert not file_name.startswith('.')
 
-    file_path = os.path.join(self._static_path, file_name)
+    full_path = os.path.join(file_path, file_name)
     try:
-      with open(file_path, 'rb') as fh:
+      with open(full_path, 'rb') as fh:
         start_response('200 OK', [('Content-Type', self._MIMEType(file_name))])
         return [fh.read()]
     except FileNotFoundError:
@@ -284,7 +291,7 @@ class HTTPRequestHandler(object):
 
 class Server(object):
 
-  def __init__(self, listen_host, listen_port, server_key, server_cert, ca_cert, image_path, image_types, exec_handlers):
+  def __init__(self, listen_host, listen_port, server_key, server_cert, ca_cert, image_path, image_types, exec_handlers, static_paths):
     websockets = WebSockets()
 
     wm = pyinotify.WatchManager()
@@ -295,7 +302,8 @@ class Server(object):
       wm.add_watch(type_path, pyinotify.IN_MOVED_TO)
 
     exec_handlers = dict(x.split('=', 1) for x in (exec_handlers or []))
-    http_handler = HTTPRequestHandler(image_path, image_types, exec_handlers, websockets)
+    static_paths = dict(x.split('=', 1) for x in (static_paths or []))
+    http_handler = HTTPRequestHandler(image_path, image_types, exec_handlers, static_paths, websockets)
     self._httpd = geventserver.WSGIServer(
         (listen_host, listen_port),
         http_handler,
@@ -321,7 +329,8 @@ def main():
       FLAGS.ca_cert,
       FLAGS.image_path,
       set(FLAGS.image_types),
-      FLAGS.exec_handlers)
+      FLAGS.exec_handlers,
+      FLAGS.static_paths)
   server.Serve()
 
 
