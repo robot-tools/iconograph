@@ -111,8 +111,8 @@ ImageController.prototype.onFetchManifest_ = function(type, wrapper) {
     volume_id.addEventListener(
         'click', (e) => this.onVolumeIDClick_(e.target.innerText));
 
-    let reboot_into = this.createNode_(version, 'command', 'Reboot into');
-    reboot_into.addEventListener(
+    let select = this.createNode_(version, 'command', 'Select');
+    select.addEventListener(
         'click', (e) => {
             this.sendReboot_(type.version_hostname.innerText, image.timestamp);
             type.version_section.classList.remove('live');
@@ -154,7 +154,7 @@ ImageController.prototype.addInstance_ = function(type, hostname) {
   instance.next_volume_id = this.createNode_(instance.section, 'volumeID');
   instance.status = this.createNode_(instance.section, 'status');
   instance.reboot = this.createNode_(instance.section, 'reboot', 'Reboot');
-  instance.reboot_into = this.createNode_(instance.section, 'reboot', 'Reboot into');
+  instance.select = this.createNode_(instance.section, 'reboot', 'Select');
 
   instance.volume_id.addEventListener(
       'click', (e) => this.onVolumeIDClick_(e.target.innerText));
@@ -162,8 +162,8 @@ ImageController.prototype.addInstance_ = function(type, hostname) {
       'click', (e) => this.onVolumeIDClick_(e.target.innerText));
   instance.reboot.addEventListener(
       'click', (e) => this.sendReboot_(hostname));
-  instance.reboot_into.addEventListener(
-      'click', (e) => this.onRebootIntoClick_(type, hostname));
+  instance.select.addEventListener(
+      'click', (e) => this.onSelectClick_(type, hostname));
 
   type.instances.set(hostname, instance);
 };
@@ -199,7 +199,7 @@ ImageController.prototype.onVolumeIDClick_ = function(volume_id) {
   open(base_url.replace('VOLUMEID', volume_id));
 };
 
-ImageController.prototype.onRebootIntoClick_ = function(type, hostname) {
+ImageController.prototype.onSelectClick_ = function(type, hostname) {
   type.version_hostname.innerText = hostname;
   type.version_section.classList.add('live');
 };
