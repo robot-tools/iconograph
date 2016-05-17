@@ -122,7 +122,7 @@ script
   chvt 8
   /icon/iconograph/client/wait_for_service.py --host=%(host)s --service=%(service)s
   chvt 8
-  /icon/iconograph/imager/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/icon/config/ca.image.cert.pem --server=%(server)s --image-type=%(image_type)s %(image_flags)s
+  /icon/iconograph/client/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/icon/config/ca.image.cert.pem --server=%(server)s --image-type=%(image_type)s %(image_flags)s
   chvt 8
 
   echo
