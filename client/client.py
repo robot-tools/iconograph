@@ -66,7 +66,7 @@ class Client(threadedclient.WebSocketClient):
   def Loop(self):
     self.daemon = True
     self.connect()
-    self._OnNewManifest2()
+    self._UpdateManifest()
     while True:
       self._SendReport()
       time.sleep(5.0)
@@ -100,7 +100,7 @@ class Client(threadedclient.WebSocketClient):
   def _OnNewManifest(self, data):
     if data['image_type'] != self._config['image_type']:
       return
-    self._OnNewManifest2()
+    self._UpdateManifest()
 
   def _GetFetcher(self):
     return fetcher.Fetcher(
@@ -117,7 +117,7 @@ class Client(threadedclient.WebSocketClient):
         FLAGS.boot_dir)
     update.Update()
 
-  def _OnNewManifest2(self):
+  def _UpdateManifest(self):
     fetch = self._GetFetcher()
     fetch.Fetch()
     fetch.DeleteOldImages(skip={'%d.iso' % self._config['timestamp']})
