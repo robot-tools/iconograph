@@ -98,9 +98,10 @@ class BaseWSHandler(websocket.WebSocket):
 
 
 def GetSlaveWSHandler(image_types, websockets):
-  _hostname = None
 
   class SlaveWSHandler(BaseWSHandler):
+    _hostname = None
+
     def opened(self):
       super().opened(image_types)
       websockets.slaves.add(self)
