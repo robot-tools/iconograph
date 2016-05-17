@@ -142,12 +142,10 @@ class Imager(object):
         FLAGS.https_client_cert,
         FLAGS.https_client_key)
 
-  def _UpdateGrub(self, root, image_dir):
-    boot_dir = os.path.join(root, 'isodevice')
-
+  def _UpdateGrub(self, image_dir, root):
     update = update_grub.GrubUpdater(
         image_dir,
-        boot_dir)
+        root)
     update.Update()
 
   def _FetchImages(self, root):
@@ -164,7 +162,7 @@ class Imager(object):
     root = self._MountBoot()
     self._InstallGrub(root)
     image_dir = self._FetchImages(root)
-    self._UpdateGrub(root, image_dir)
+    self._UpdateGrub(image_dir, root)
 
   def Image(self):
     self._umount = []

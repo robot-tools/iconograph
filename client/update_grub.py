@@ -14,7 +14,7 @@ class GrubUpdater(object):
     self._image_dir = image_dir
     self._boot_dir = boot_dir
 
-    assert self._image_dir.startswith(self._boot_dir)
+    assert self._image_dir.startswith(self._boot_dir), (self._image_dir, self._boot_dir)
 
     self._image_path = '/' + os.path.relpath(self._image_dir, self._boot_dir)
 
