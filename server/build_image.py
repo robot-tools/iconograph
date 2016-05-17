@@ -62,8 +62,7 @@ parser.add_argument(
 parser.add_argument(
     '--volume-id',
     dest='volume_id',
-    action='store',
-    required=True)
+    action='store')
 FLAGS = parser.parse_args()
 
 
@@ -235,8 +234,8 @@ class ImageBuilder(object):
         'image_type': self._image_type,
         'timestamp': timestamp,
       }
-      if FLAGS.volume_id:
-        info['volume_id'] = FLAGS.volume_id
+      if self._volume_id:
+        info['volume_id'] = self._volume_id
       json.dump(info, fh, sort_keys=True, indent=4)
       fh.write('\n')
 

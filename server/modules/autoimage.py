@@ -9,11 +9,6 @@ from urllib import parse
 
 parser = argparse.ArgumentParser(description='iconograph autoimage')
 parser.add_argument(
-    '--base-url',
-    dest='base_url',
-    action='store',
-    required=True)
-parser.add_argument(
     '--ca-cert',
     dest='ca_cert',
     action='store',
@@ -31,21 +26,34 @@ parser.add_argument(
 parser.add_argument(
     '--https-ca-cert',
     dest='https_ca_cert',
-    action='store')
+    action='store',
+    required=True)
 parser.add_argument(
     '--https-client-cert',
     dest='https_client_cert',
-    action='store')
+    action='store',
+    required=True)
 parser.add_argument(
     '--https-client-key',
     dest='https_client_key',
-    action='store')
+    action='store',
+    required=True)
+parser.add_argument(
+    '--image-type',
+    dest='image_type',
+    action='store',
+    required=True)
 parser.add_argument(
     '--persistent-percent',
     dest='persistent_percent',
     action='store',
     type=int,
     default=0)
+parser.add_argument(
+    '--server',
+    dest='server',
+    action='store',
+    required=True)
 FLAGS = parser.parse_args()
 
 
@@ -80,31 +88,27 @@ def main():
 
   image_flags = []
 
-  if FLAGS.https_ca_cert:
-    https_ca_cert_path = os.path.join('icon', 'config', 'ca.www.cert.pem')
-    shutil.copyfile(
-      FLAGS.https_ca_cert,
-      os.path.join(FLAGS.chroot_path, https_ca_cert_path))
-    image_flags.extend([
-        '--https-ca-cert', os.path.join('/', https_ca_cert_path),
-    ])
+  https_ca_cert_path = os.path.join('icon', 'config', 'ca.www.cert.pem')
+  shutil.copyfile(
+    FLAGS.https_ca_cert,
+    os.path.join(FLAGS.chroot_path, https_ca_cert_path))
+  image_flags.extend([
+      '--https-ca-cert', os.path.join('/', https_ca_cert_path),
+  ])
 
-  if FLAGS.https_client_cert and FLAGS.https_client_key:
-    https_client_cert_path = os.path.join('icon', 'config', 'client.www.cert.pem')
-    shutil.copyfile(
-      FLAGS.https_client_cert,
-      os.path.join(FLAGS.chroot_path, https_client_cert_path))
-    https_client_key_path = os.path.join('icon', 'config', 'client.www.key.pem')
-    shutil.copyfile(
-      FLAGS.https_client_key,
-      os.path.join(FLAGS.chroot_path, https_client_key_path))
-    os.chmod(os.path.join(FLAGS.chroot_path, https_client_key_path), 0o400)
-    image_flags.extend([
-        '--https-client-cert', os.path.join('/', https_client_cert_path),
-        '--https-client-key', os.path.join('/', https_client_key_path),
-    ])
-
-  parsed = parse.urlparse(FLAGS.base_url)
+  https_client_cert_path = os.path.join('icon', 'config', 'client.www.cert.pem')
+  shutil.copyfile(
+    FLAGS.https_client_cert,
+    os.path.join(FLAGS.chroot_path, https_client_cert_path))
+  https_client_key_path = os.path.join('icon', 'config', 'client.www.key.pem')
+  shutil.copyfile(
+    FLAGS.https_client_key,
+  os.path.join(FLAGS.chroot_path, https_client_key_path))
+  os.chmod(os.path.join(FLAGS.chroot_path, https_client_key_path), 0o400)
+  image_flags.extend([
+      '--https-client-cert', os.path.join('/', https_client_cert_path),
+      '--https-client-key', os.path.join('/', https_client_key_path),
+  ])
 
   init = os.path.join(FLAGS.chroot_path, 'etc', 'init', 'autoimage.conf')
   with open(init, 'w') as fh:
@@ -118,7 +122,7 @@ script
   chvt 8
   /icon/iconograph/client/wait_for_service.py --host=%(host)s --service=%(service)s
   chvt 8
-  /icon/iconograph/imager/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/icon/config/ca.image.cert.pem --base-url=%(base_url)s %(image_flags)s
+  /icon/iconograph/imager/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/icon/config/ca.image.cert.pem --server=%(server)s --image-type=%(image_type)s %(image_flags)s
   chvt 8
 
   echo
@@ -129,11 +133,12 @@ script
   /icon/iconograph/client/alert.py --type=happy
 end script
 """ % {
-      'host': parsed.hostname,
-      'service': parsed.port or parsed.scheme,
+      'host': FLAGS.server,
+      'service': 'https',
       'device': FLAGS.device,
       'persistent_percent': FLAGS.persistent_percent,
-      'base_url': FLAGS.base_url,
+      'server': FLAGS.server,
+      'image_type': FLAGS.image_type,
       'image_flags': ' '.join(image_flags),
     })
 

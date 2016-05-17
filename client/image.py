@@ -1,18 +1,20 @@
 #!/usr/bin/python3
 
 import argparse
+import fetcher
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
 import time
+import update_grub
 
 
 parser = argparse.ArgumentParser(description='iconograph image')
 parser.add_argument(
-    '--base-url',
-    dest='base_url',
+    '--server',
+    dest='server',
     action='store',
     required=True)
 parser.add_argument(
@@ -23,15 +25,23 @@ parser.add_argument(
 parser.add_argument(
     '--https-ca-cert',
     dest='https_ca_cert',
-    action='store')
+    action='store',
+    required=True)
 parser.add_argument(
     '--https-client-cert',
     dest='https_client_cert',
-    action='store')
+    action='store',
+    required=True)
 parser.add_argument(
     '--https-client-key',
     dest='https_client_key',
-    action='store')
+    action='store',
+    required=True)
+parser.add_argument(
+    '--image-type',
+    dest='image_type',
+    action='store',
+    required=True)
 parser.add_argument(
     '--device',
     dest='device',
@@ -48,24 +58,9 @@ FLAGS = parser.parse_args()
 
 class Imager(object):
 
-  def __init__(self, device, persistent_percent, base_url, ca_cert, https_ca_cert, https_client_cert, https_client_key):
+  def __init__(self, device, persistent_percent):
     self._device = device
     self._persistent_percent = persistent_percent
-
-    self._fetcher_args = [
-        '--base-url', base_url,
-        '--ca-cert', ca_cert,
-    ]
-    if https_ca_cert:
-      self._fetcher_args.extend([
-          '--https-ca-cert', https_ca_cert,
-      ])
-    if https_client_cert and https_client_key:
-      self._fetcher_args.extend([
-          '--https-client-cert', https_client_cert,
-          '--https-client-key', https_client_key,
-      ])
-
     self._icon_path = os.path.dirname(sys.argv[0])
 
   def _Exec(self, *args, **kwargs):
@@ -138,37 +133,38 @@ class Imager(object):
         '--boot-directory', root,
         self._device)
 
+  def _GetFetcher(self, image_dir):
+    return fetcher.Fetcher(
+        'https://%s/image/%s' % (FLAGS.server, FLAGS.image_type),
+        FLAGS.ca_cert,
+        image_dir,
+        FLAGS.https_ca_cert,
+        FLAGS.https_client_cert,
+        FLAGS.https_client_key)
+
+  def _UpdateGrub(self, root, image_dir):
+    boot_dir = os.path.join(root, 'isodevice')
+
+    update = update_grub.GrubUpdater(
+        image_dir,
+        boot_dir)
+    update.Update()
+
   def _FetchImages(self, root):
-    image_path = os.path.join(root, 'iconograph')
-    os.mkdir(image_path)
+    image_dir = os.path.join(root, 'iconograph')
+    os.mkdir(image_dir)
 
-    fetcher = os.path.join(self._icon_path, '..', 'client', 'fetcher.py')
+    fetch = self._GetFetcher(image_dir)
+    fetch.Fetch()
 
-    self._Exec(
-        fetcher,
-        '--image-dir', image_path,
-        *self._fetcher_args)
-
-    return image_path
-
-  def _CreateGrubCfg(self, root, image_path):
-    grub_cfg_path = os.path.join(root, 'grub', 'grub.cfg')
-
-    update_grub = os.path.join(self._icon_path, '..', 'client', 'update_grub.py')
-
-    with open(grub_cfg_path, 'w') as fh:
-      self._Exec(
-          update_grub,
-          '--image-dir', image_path,
-          '--boot-dir', root,
-          stdout=fh)
+    return image_dir
 
   def _Image(self):
     self._PartitionAndMkFS()
     root = self._MountBoot()
     self._InstallGrub(root)
-    image_path = self._FetchImages(root)
-    self._CreateGrubCfg(root, image_path)
+    image_dir = self._FetchImages(root)
+    self._UpdateGrub(root, image_dir)
 
   def Image(self):
     self._umount = []
@@ -185,12 +181,7 @@ class Imager(object):
 def main():
   imager = Imager(
       FLAGS.device,
-      FLAGS.persistent_percent,
-      FLAGS.base_url,
-      FLAGS.ca_cert,
-      FLAGS.https_ca_cert,
-      FLAGS.https_client_cert,
-      FLAGS.https_client_key)
+      FLAGS.persistent_percent)
   imager.Image()
 
 
