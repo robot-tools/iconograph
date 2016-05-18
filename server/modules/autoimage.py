@@ -4,7 +4,6 @@ import argparse
 import os
 import shutil
 import subprocess
-from urllib import parse
 
 
 parser = argparse.ArgumentParser(description='iconograph autoimage')
@@ -120,7 +119,7 @@ start on runlevel [2345]
 script
   exec </dev/tty8 >/dev/tty8 2>&1
   chvt 8
-  /icon/iconograph/client/wait_for_service.py --host=%(host)s --service=%(service)s
+  /icon/iconograph/client/wait_for_service.py --host=%(server)s --service=https
   chvt 8
   /icon/iconograph/client/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/icon/config/ca.image.cert.pem --server=%(server)s --image-type=%(image_type)s %(image_flags)s
   chvt 8
@@ -133,8 +132,6 @@ script
   /icon/iconograph/client/alert.py --type=happy
 end script
 """ % {
-      'host': FLAGS.server,
-      'service': 'https',
       'device': FLAGS.device,
       'persistent_percent': FLAGS.persistent_percent,
       'server': FLAGS.server,

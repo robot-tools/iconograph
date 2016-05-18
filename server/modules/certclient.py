@@ -4,7 +4,6 @@ import argparse
 import os
 import shutil
 import subprocess
-from urllib import parse
 
 
 parser = argparse.ArgumentParser(description='iconograph autoimage')
@@ -93,8 +92,6 @@ def main():
     os.path.join(FLAGS.chroot_path, client_key_path))
   os.chmod(os.path.join(FLAGS.chroot_path, client_key_path), 0o400)
 
-  parsed = parse.urlparse(FLAGS.server)
-
   init = os.path.join(FLAGS.chroot_path, 'etc', 'init', 'certclient.%s.conf' % FLAGS.tag)
   with open(init, 'w') as fh:
     fh.write("""
@@ -116,7 +113,7 @@ script
   fi
 
   chvt 9
-  /icon/iconograph/client/wait_for_service.py --host=%(host)s --service=%(service)s
+  /icon/iconograph/client/wait_for_service.py --host=%(server)s --service=https
   chvt 9
 
   if test ! -s "${CERT}"; then
@@ -132,11 +129,9 @@ script
   echo "=================="
 end script
 """ % {
-      'host': parsed.hostname,
-      'service': parsed.port or parsed.scheme,
+      'server': FLAGS.server,
       'subject': FLAGS.subject,
       'tag': FLAGS.tag,
-      'server': FLAGS.server,
     })
 
 
