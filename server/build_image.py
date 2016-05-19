@@ -216,17 +216,21 @@ class ImageBuilder(object):
       os.fchmod(fh.fileno(), 0o744)
 
   def _InstallPackages(self, chroot_path):
-    os.environ['DEBIAN_FRONTEND'] = 'noninteractive'
+    env = os.environ.copy()
+    env['DEBIAN_FRONTEND'] = 'noninteractive'
+
     self._ExecChroot(
         chroot_path,
         'apt-get',
-        'update')
+        'update',
+        env=env)
     self._ExecChroot(
         chroot_path,
         'apt-get',
         'install',
         '--assume-yes',
-        *self._BASE_PACKAGES)
+        *self._BASE_PACKAGES,
+        env=env)
 
   def _WriteVersion(self, chroot_path, timestamp):
     with open(os.path.join(chroot_path, 'etc', 'iconograph.json'), 'w') as fh:
@@ -240,13 +244,17 @@ class ImageBuilder(object):
       fh.write('\n')
 
   def _RunModules(self, chroot_path):
+    env = os.environ.copy()
+    env['PYTHONPATH'] = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), 'module_lib'))
+
     for module in self._modules:
       self._Exec(
           '%(module)s --chroot-path=%(chroot_path)s' % {
             'module': module,
             'chroot_path': chroot_path,
           },
-          shell=True)
+          shell=True,
+          env=env)
 
   def _CleanPackages(self, chroot_path):
     self._ExecChroot(
