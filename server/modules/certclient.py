@@ -94,7 +94,9 @@ script
   chvt 9
 
   KEY="/systemid/$(hostname).%(tag)s.key.pem"
+  KEY_LINK="/systemid/%(tag)s.key.pem"
   CERT="/systemid/$(hostname).%(tag)s.cert.pem"
+  CERT_LINK="/systemid/%(tag)s.cert.pem"
   SUBJECT="$(echo '%(subject)s' | sed s/SYSTEMID/$(hostname)/g)"
 
   if test ! -s "${KEY}"; then
@@ -110,6 +112,9 @@ script
     openssl req -new -key "${KEY}" -subj "${SUBJECT}" | /icon/certserver/certclient.py --ca-cert=/icon/config/ca.%(tag)s.certserver.cert.pem --client-cert=/icon/config/client.%(tag)s.certserver.cert.pem --client-key=/icon/config/client.%(tag)s.certserver.key.pem --server=%(server)s > "${CERT}"
     chmod 0444 "${CERT}"
   fi
+
+  ln -s "${KEY}" "${KEY_LINK}"
+  ln -s "${CERT}" "${CERT_LINK}"
 
   chvt 9
 
