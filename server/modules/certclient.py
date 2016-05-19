@@ -30,6 +30,11 @@ parser.add_argument(
     action='store',
     required=True)
 parser.add_argument(
+    '--generate-dh',
+    dest='generate_dh',
+    action='store_true',
+    default=False)
+parser.add_argument(
     '--subject',
     dest='subject',
     action='store',
@@ -93,6 +98,8 @@ script
   exec </dev/tty9 >/dev/tty9 2>&1
   chvt 9
 
+  DH="/systemid/$(hostname).%(tag)s.dh"
+  DH_LINK="/systemid/%(tag)s.dh"
   KEY="/systemid/$(hostname).%(tag)s.key.pem"
   KEY_LINK="/systemid/%(tag)s.key.pem"
   CERT="/systemid/$(hostname).%(tag)s.cert.pem"
@@ -113,6 +120,13 @@ script
     chmod 0444 "${CERT}"
   fi
 
+  if test "%(dh)s" = "y"; then
+    if test ! -s "${DH}"; then
+      openssl dhparam -out "${DH}" 2048
+    fi
+    ln --symbolic --force $(basename "${DH}") "${DH_LINK}"
+  fi
+
   ln --symbolic --force $(basename "${KEY}") "${KEY_LINK}"
   ln --symbolic --force $(basename "${CERT}") "${CERT_LINK}"
 
@@ -124,6 +138,7 @@ script
   echo "=================="
 end script
 """ % {
+      'dh': 'y' if FLAGS.generate_dh else 'n',
       'server': FLAGS.server,
       'subject': FLAGS.subject,
       'tag': FLAGS.tag,
