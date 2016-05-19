@@ -3,7 +3,8 @@
 import argparse
 import glob
 import os
-import subprocess
+
+import icon_lib
 
 
 parser = argparse.ArgumentParser(description='iconograph openssh')
@@ -15,21 +16,9 @@ parser.add_argument(
 FLAGS = parser.parse_args()
 
 
-def Exec(*args, **kwargs):
-  print('+', args)
-  subprocess.check_call(args, **kwargs)
-
-
-def ExecChroot(*args, **kwargs):
-  Exec('chroot', FLAGS.chroot_path, *args, **kwargs)
-
-
 def main():
-  ExecChroot(
-      'apt-get',
-      'install',
-      '--assume-yes',
-      'openssh-server')
+  module = icon_lib.IconModule(FLAGS.chroot_path)
+  module.InstallPackages('openssh-server')
 
   for path in glob.glob(os.path.join(FLAGS.chroot_path, 'etc', 'ssh', 'ssh_host_*')):
     os.unlink(path)

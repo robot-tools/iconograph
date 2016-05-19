@@ -3,7 +3,8 @@
 import argparse
 import os
 import shutil
-import subprocess
+
+import icon_lib
 
 
 parser = argparse.ArgumentParser(description='iconograph adduser')
@@ -28,18 +29,10 @@ parser.add_argument(
 FLAGS = parser.parse_args()
 
 
-def Exec(*args, **kwargs):
-    print('+', args)
-    subprocess.check_call(args, **kwargs)
-
-
-def ExecChroot(*args, **kwargs):
-    Exec('chroot', FLAGS.chroot_path, *args, **kwargs)
-
-
 def main():
-  ExecChroot('adduser', '--system', '--group', '--disabled-password', 
-             '--shell=/bin/bash', FLAGS.username)
+  module = icon_lib.IconModule(FLAGS.chroot_path)
+  module.ExecChroot('adduser', '--system', '--group', '--disabled-password', 
+                    '--shell=/bin/bash', FLAGS.username)
 
   if FLAGS.sudo:
     with open(os.path.join(FLAGS.chroot_path, 'etc', 'sudoers.d', FLAGS.username), 'w') as fh:
@@ -50,7 +43,7 @@ def main():
     dest_path = os.path.join(dest_dir, 'authorized_keys')
     os.mkdir(dest_dir)
     shutil.copy(FLAGS.authorized_keys_file, dest_path)
-    ExecChroot('chown', '--recursive', '%s:%s' % (FLAGS.username, FLAGS.username), '/home/%s' % FLAGS.username)
+    module.ExecChroot('chown', '--recursive', '%s:%s' % (FLAGS.username, FLAGS.username), '/home/%s' % FLAGS.username)
 
 
 if __name__ == '__main__':

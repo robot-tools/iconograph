@@ -46,7 +46,9 @@ class IconModule(object):
     self.ExecChroot('ldconfig')
 
   def InstallPackages(self, *packages):
-    self.ExecChroot('apt-get', 'install', '--assume-yes', '--no-install-recommends', *packages)
+    env = os.environ.copy()
+    env['DEBIAN_FRONTEND'] = 'noninteractive'
+    self.ExecChroot('apt-get', 'install', '--assume-yes', '--no-install-recommends', *packages, env=env)
 
   def InstallPythonPackages(self, *packages):
     self.InstallPackages('python-pip')

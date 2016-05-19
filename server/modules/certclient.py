@@ -5,6 +5,8 @@ import os
 import shutil
 import subprocess
 
+import icon_lib
+
 
 parser = argparse.ArgumentParser(description='iconograph autoimage')
 parser.add_argument(
@@ -45,33 +47,21 @@ parser.add_argument(
 FLAGS = parser.parse_args()
 
 
-def Exec(*args, **kwargs):
-  print('+', args)
-  subprocess.check_call(args, **kwargs)
-
-
-def ExecChroot(*args, **kwargs):
-  Exec('chroot', FLAGS.chroot_path, *args, **kwargs)
-
-
 def main():
-  ExecChroot(
-      'apt-get',
-      'install',
-      '--assume-yes',
-      'git', 'python3-requests', 'openssl')
+  module = icon_lib.IconModule(FLAGS.chroot_path)
+  module.InstallPackages('git', 'python3-requests', 'openssl')
 
   os.makedirs(os.path.join(FLAGS.chroot_path, 'icon', 'config'), exist_ok=True)
 
   if not os.path.exists(os.path.join(FLAGS.chroot_path, 'icon', 'iconograph')):
-    ExecChroot(
+    module.ExecChroot(
         'git',
         'clone',
         'https://github.com/robot-tools/iconograph.git',
         'icon/iconograph')
 
   if not os.path.exists(os.path.join(FLAGS.chroot_path, 'icon', 'certserver')):
-    ExecChroot(
+    module.ExecChroot(
         'git',
         'clone',
         'https://github.com/robot-tools/certserver.git',
