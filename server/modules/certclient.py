@@ -113,8 +113,8 @@ script
     chmod 0444 "${CERT}"
   fi
 
-  ln -s "${KEY}" "${KEY_LINK}"
-  ln -s "${CERT}" "${CERT_LINK}"
+  ln --symbolic --force $(basename "${KEY}") "${KEY_LINK}"
+  ln --symbolic --force $(basename "${CERT}") "${CERT_LINK}"
 
   chvt 9
 
