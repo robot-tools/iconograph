@@ -98,8 +98,8 @@ script
   exec </dev/tty9 >/dev/tty9 2>&1
   chvt 9
 
-  DH="/systemid/$(hostname).%(tag)s.dh"
-  DH_LINK="/systemid/%(tag)s.dh"
+  DH="/systemid/$(hostname).%(tag)s.dh.pem"
+  DH_LINK="/systemid/%(tag)s.dh.pem"
   KEY="/systemid/$(hostname).%(tag)s.key.pem"
   KEY_LINK="/systemid/%(tag)s.key.pem"
   CERT="/systemid/$(hostname).%(tag)s.cert.pem"
