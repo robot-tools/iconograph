@@ -281,7 +281,8 @@ class HTTPRequestHandler(object):
     start_response('200 OK', [])
     proc = subprocess.Popen(
         [handler, arg],
-        stdout=subprocess.PIPE)
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT)
     while True:
       block = proc.stdout.read(self._BLOCK_SIZE)
       if len(block) == 0:
