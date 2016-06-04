@@ -27,7 +27,7 @@ task
 emits systemid-ready
 
 script
-  mount LABEL=SYSTEMID /systemid
+  mount -o data=journal,noatime,sync LABEL=SYSTEMID /systemid
   . /systemid/systemid
   echo ${SYSTEMID} > /etc/hostname
   hostname --file /etc/hostname

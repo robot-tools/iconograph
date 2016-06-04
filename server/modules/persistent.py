@@ -27,7 +27,7 @@ task
 emits persistent-ready
 
 script
-  mount LABEL=PERSISTENT /persistent
+  mount -o data=journal,noatime,sync LABEL=PERSISTENT /persistent
   initctl emit --no-wait persistent-ready
 end script
 """)
