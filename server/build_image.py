@@ -68,28 +68,33 @@ FLAGS = parser.parse_args()
 
 class ImageBuilder(object):
 
-  _BASE_PACKAGES = [
+  _BASE_PACKAGES = {
     'devscripts',
     'nano',
     'iputils-ping',
     'linux-firmware',
-    'linux-firmware-nonfree',
     'ubuntu-minimal',
     'ubuntu-standard',
     'user-setup',
-  ]
+  }
 
-  _SUITES = [
+  _RELEASE_PACKAGES = {
+    'trusty': {
+      'linux-firmware-nonfree',
+    },
+  }
+
+  _SUITES = {
     '%(release)s',
     '%(release)s-updates',
-  ]
+  }
 
-  _SECTIONS = [
+  _SECTIONS = {
     'main',
     'restricted',
     'universe',
     'multiverse',
-  ]
+  }
 
   _DIVERSIONS = {
     '/sbin/initctl': '/bin/true',
@@ -229,7 +234,7 @@ class ImageBuilder(object):
         'apt-get',
         'install',
         '--assume-yes',
-        *self._BASE_PACKAGES,
+        *(self._BASE_PACKAGES | self._RELEASE_PACKAGES.get(self._release, set())),
         env=env)
 
   def _WriteVersion(self, chroot_path, timestamp):

@@ -6,6 +6,13 @@ import subprocess
 import sys
 
 
+class Error(Exception):
+  pass
+
+class SubprocessFailure(Error):
+  pass
+
+
 class IconModule(object):
 
   def __init__(self, chroot_path):
@@ -13,7 +20,11 @@ class IconModule(object):
 
   def Exec(self, *args, **kwargs):
     print('+', args)
-    subprocess.check_call(args, **kwargs)
+    try:
+      subprocess.check_call(args, **kwargs)
+    except subprocess.CalledProcessError as e:
+      print('ERROR:', e)
+      raise SubprocessFailure(e)
 
   def ExecChroot(self, *args, **kwargs):
     self.Exec('chroot', self._chroot_path, *args, **kwargs)
