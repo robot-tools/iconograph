@@ -35,24 +35,7 @@ hostname --file /etc/hostname
 grep ${SYSTEMID} /etc/hosts >/dev/null || echo "127.0.2.1 ${SYSTEMID}" >> /etc/hosts
 """)
 
-  upstart = os.path.join(FLAGS.chroot_path, 'etc', 'init', 'systemid.conf')
-  with open(upstart, 'w') as fh:
-    fh.write("""
-description "Mount /systemid"
-
-start on filesystem
-task
-
-emits systemid-ready
-
-script
-  /icon/systemid/startup.sh
-  initctl emit --no-wait systemid-ready
-end script
-""")
-
-  systemd = os.path.join(FLAGS.chroot_path, 'lib', 'systemd', 'system', 'systemid.service')
-  with open(systemd, 'w') as fh:
+  with module.ServiceFile('systemid.service') as fh:
     fh.write("""
 [Unit]
 Description=Mount /systemid and configure from it
@@ -69,18 +52,8 @@ ExecStart=/icon/systemid/startup.sh
 [Install]
 WantedBy=sysinit.target
 """)
-  try:
-    module.ExecChroot(
-        'systemctl',
-        'unmask',
-        'systemid.service')
-    module.ExecChroot(
-        'systemctl',
-        'enable',
-        'systemid.service')
-  except icon_lib.SubprocessFailure:
-    # trusty backwards-compat
-    pass
+  module.EnableService('systemid.service')
+
 
 if __name__ == '__main__':
   main()

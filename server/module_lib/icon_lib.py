@@ -73,3 +73,10 @@ class IconModule(object):
     with open(os.path.join(self._chroot_path, 'etc', 'modules'), 'a') as fh:
       for module in modules:
         fh.write('%s\n' % module)
+
+  def ServiceFile(self, service):
+    path = os.path.join(self._chroot_path, 'lib', 'systemd', 'system', service)
+    return open(path, 'w')
+
+  def EnableService(self, service):
+    self.ExecChroot('systemctl', 'enable', service)

@@ -3,6 +3,8 @@
 import argparse
 import os
 
+import icon_lib
+
 
 parser = argparse.ArgumentParser(description='iconograph persistent')
 parser.add_argument(
@@ -14,23 +16,39 @@ FLAGS = parser.parse_args()
 
 
 def main():
+  module = icon_lib.IconModule(FLAGS.chroot_path)
+
   os.mkdir(os.path.join(FLAGS.chroot_path, 'persistent'))
 
-  init = os.path.join(FLAGS.chroot_path, 'etc', 'init', 'persistent.conf')
-  with open(init, 'w') as fh:
-    fh.write("""
-description "Mount /persistent"
+  tool_path = os.path.join(FLAGS.chroot_path, 'icon', 'persistent')
+  os.makedirs(tool_path, exist_ok=True)
 
-start on filesystem
-task
-
-emits persistent-ready
-
-script
-  mount -o data=journal,noatime,sync LABEL=PERSISTENT /persistent
-  initctl emit --no-wait persistent-ready
-end script
+  script = os.path.join(tool_path, 'startup.sh')
+  with open(script, 'w') as fh:
+    os.chmod(fh.fileno(), 0o755)
+    fh.write("""\
+#!/bin/bash
+mount -o data=journal,noatime,sync LABEL=PERSISTENT /persistent
 """)
+
+  with module.ServiceFile('persistent.service') as fh:
+    fh.write("""
+[Unit]
+Description=Mount /persistent
+DefaultDependencies=no
+Conflicts=shutdown.target
+After=systemd-remount-fs.service
+Before=sysinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/icon/persistent/startup.sh
+
+[Install]
+WantedBy=sysinit.target
+""")
+  module.EnableService('persistent.service')
 
 
 if __name__ == '__main__':
