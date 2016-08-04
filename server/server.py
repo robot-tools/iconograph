@@ -174,6 +174,7 @@ class INotifyHandler(pyinotify.ProcessEvent):
     if event.name != 'manifest.json':
       return
     image_type = os.path.basename(event.path)
+    print('New manifest for:', image_type)
     self._websockets.Broadcast(self._websockets, {
       'type': 'new_manifest',
       'data': {

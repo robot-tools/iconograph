@@ -20,8 +20,10 @@ class IconModule(object):
 
   def Exec(self, *args, **kwargs):
     print('+', args)
+    env = kwargs.pop('env', os.environ.copy())
+    env['LC_ALL'] = 'C'
     try:
-      subprocess.check_call(args, **kwargs)
+      subprocess.check_call(args, env=env, **kwargs)
     except subprocess.CalledProcessError as e:
       print('ERROR:', e)
       raise SubprocessFailure(e)
