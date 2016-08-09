@@ -8,7 +8,7 @@ import subprocess
 import icon_lib
 
 
-parser = argparse.ArgumentParser(description='iconograph autoimage')
+parser = argparse.ArgumentParser(description='iconograph certclient')
 parser.add_argument(
     '--chroot-path',
     dest='chroot_path',
@@ -87,62 +87,79 @@ def main():
     os.path.join(FLAGS.chroot_path, client_key_path))
   os.chmod(os.path.join(FLAGS.chroot_path, client_key_path), 0o400)
 
-  init = os.path.join(FLAGS.chroot_path, 'etc', 'init', 'certclient.%s.conf' % FLAGS.tag)
-  with open(init, 'w') as fh:
-    fh.write("""
-description "CertClient %(tag)s"
-
-start on systemid-ready
-
-script
-  exec </dev/tty9 >/dev/tty9 2>&1
-  chvt 9
-
-  DH="/systemid/$(hostname).%(tag)s.dh.pem"
-  DH_LINK="/systemid/%(tag)s.dh.pem"
-  KEY="/systemid/$(hostname).%(tag)s.key.pem"
-  KEY_LINK="/systemid/%(tag)s.key.pem"
-  CERT="/systemid/$(hostname).%(tag)s.cert.pem"
-  CERT_LINK="/systemid/%(tag)s.cert.pem"
-  SUBJECT="$(echo '%(subject)s' | sed s/SYSTEMID/$(hostname)/g)"
-
-  if test ! -s "${KEY}"; then
-    openssl ecparam -name secp384r1 -genkey | openssl ec -out "${KEY}"
-    chmod 0400 "${KEY}"
-  fi
-
-  chvt 9
-  /icon/iconograph/client/wait_for_service.py --host=%(server)s --service=https
-  chvt 9
-
-  if test ! -s "${CERT}"; then
-    openssl req -new -key "${KEY}" -subj "${SUBJECT}" | /icon/certserver/certclient.py --ca-cert=/icon/config/ca.%(tag)s.certserver.cert.pem --client-cert=/icon/config/client.%(tag)s.certserver.cert.pem --client-key=/icon/config/client.%(tag)s.certserver.key.pem --server=%(server)s > "${CERT}"
-    chmod 0444 "${CERT}"
-  fi
-
-  if test "%(dh)s" = "y"; then
-    if test ! -s "${DH}"; then
-      openssl dhparam -out "${DH}" 2048
-    fi
-    ln --symbolic --force $(basename "${DH}") "${DH_LINK}"
-  fi
-
-  ln --symbolic --force $(basename "${KEY}") "${KEY_LINK}"
-  ln --symbolic --force $(basename "${CERT}") "${CERT_LINK}"
-
-  chvt 9
-
-  echo
-  echo "=================="
-  echo "certclient %(tag)s complete"
-  echo "=================="
-end script
-""" % {
+  tags = {
       'dh': 'y' if FLAGS.generate_dh else 'n',
       'server': FLAGS.server,
       'subject': FLAGS.subject,
       'tag': FLAGS.tag,
-    })
+  }
+
+  tool_path = os.path.join(FLAGS.chroot_path, 'icon', 'certclient-%(tag)s' % tags)
+  os.makedirs(tool_path, exist_ok=True)
+
+  script = os.path.join(tool_path, 'startup.sh')
+  with open(script, 'w') as fh:
+    os.chmod(fh.fileno(), 0o755)
+    fh.write("""\
+#!/bin/bash
+
+exec </dev/tty9 >/dev/tty9 2>&1
+chvt 9
+
+DH="/systemid/$(hostname).%(tag)s.dh.pem"
+DH_LINK="/systemid/%(tag)s.dh.pem"
+KEY="/systemid/$(hostname).%(tag)s.key.pem"
+KEY_LINK="/systemid/%(tag)s.key.pem"
+CERT="/systemid/$(hostname).%(tag)s.cert.pem"
+CERT_LINK="/systemid/%(tag)s.cert.pem"
+SUBJECT="$(echo '%(subject)s' | sed s/SYSTEMID/$(hostname)/g)"
+
+if test ! -s "${KEY}"; then
+  openssl ecparam -name secp384r1 -genkey | openssl ec -out "${KEY}"
+  chmod 0400 "${KEY}"
+fi
+
+chvt 9
+/icon/iconograph/client/wait_for_service.py --host=%(server)s --service=https
+chvt 9
+
+if test ! -s "${CERT}"; then
+  openssl req -new -key "${KEY}" -subj "${SUBJECT}" | /icon/certserver/certclient.py --ca-cert=/icon/config/ca.%(tag)s.certserver.cert.pem --client-cert=/icon/config/client.%(tag)s.certserver.cert.pem --client-key=/icon/config/client.%(tag)s.certserver.key.pem --server=%(server)s > "${CERT}"
+  chmod 0444 "${CERT}"
+fi
+
+if test "%(dh)s" = "y"; then
+  if test ! -s "${DH}"; then
+    openssl dhparam -out "${DH}" 2048
+  fi
+  ln --symbolic --force $(basename "${DH}") "${DH_LINK}"
+fi
+
+ln --symbolic --force $(basename "${KEY}") "${KEY_LINK}"
+ln --symbolic --force $(basename "${CERT}") "${CERT_LINK}"
+
+chvt 9
+
+echo
+echo "=================="
+echo "certclient %(tag)s complete"
+echo "=================="
+""" % tags)
+
+  with module.ServiceFile('certclient-%(tag)s.service' % tags) as fh:
+    fh.write("""
+[Unit]
+Description=CertClient %(tag)s
+
+[Service]
+Type=simple
+RemainAfterExit=yes
+ExecStart=/icon/certclient-%(tag)s/startup.sh
+
+[Install]
+WantedBy=multi-user.target
+""" % tags)
+  module.EnableService('certclient-%(tag)s.service' % tags)
 
 
 if __name__ == '__main__':

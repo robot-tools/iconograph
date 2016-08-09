@@ -99,35 +99,50 @@ def main():
       '--https-client-key', os.path.join('/', https_client_key_path),
   ])
 
-  init = os.path.join(FLAGS.chroot_path, 'etc', 'init', 'autoimage.conf')
-  with open(init, 'w') as fh:
-    fh.write("""
-description "AutoImage"
-
-start on runlevel [2345]
-
-script
-  exec </dev/tty8 >/dev/tty8 2>&1
-  chvt 8
-  /icon/iconograph/client/wait_for_service.py --host=%(server)s --service=https
-  chvt 8
-  /icon/iconograph/client/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/icon/config/ca.image.cert.pem --server=%(server)s --image-type=%(image_type)s %(image_flags)s
-  chvt 8
-
-  echo
-  echo "=================="
-  echo "autoimage complete"
-  echo "=================="
-
-  /icon/iconograph/client/alert.py --type=happy
-end script
-""" % {
+  tags = {
       'device': FLAGS.device,
       'persistent_percent': FLAGS.persistent_percent,
       'server': FLAGS.server,
       'image_type': FLAGS.image_type,
       'image_flags': ' '.join(image_flags),
-    })
+  }
+
+  tool_path = os.path.join(FLAGS.chroot_path, 'icon', 'autoimage-%(image_type)s' % tags)
+  os.makedirs(tool_path, exist_ok=True)
+
+  script = os.path.join(tool_path, 'startup.sh')
+  with open(script, 'w') as fh:
+    os.fchmod(fh.fileno(), 0o755)
+    fh.write("""\
+#!/bin/bash
+
+exec </dev/tty8 >/dev/tty8 2>&1
+chvt 8
+/icon/iconograph/client/wait_for_service.py --host=%(server)s --service=https
+chvt 8
+/icon/iconograph/client/image.py --device=%(device)s --persistent-percent=%(persistent_percent)d --ca-cert=/icon/config/ca.image.cert.pem --server=%(server)s --image-type=%(image_type)s %(image_flags)s
+chvt 8
+
+echo
+echo "=================="
+echo "autoimage complete"
+echo "=================="
+""" % tags)
+
+  with module.ServiceFile('autoimage-%(image_type)s.service' % tags) as fh:
+    fh.write("""
+[Unit]
+Description=AutoImage %(image_type)s
+
+[Service]
+Type=simple
+RemainAfterExit=yes
+ExecStart=/icon/autoimage-%(image_type)s/startup.sh
+
+[Install]
+WantedBy=multi-user.target
+""" % tags)
+  module.EnableService('autoimage-%(image_type)s.service' % tags)
 
 
 if __name__ == '__main__':
