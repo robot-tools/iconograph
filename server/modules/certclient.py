@@ -116,7 +116,7 @@ SUBJECT="$(echo '%(subject)s' | sed s/SYSTEMID/$(hostname)/g)"
 
 if test ! -s "${KEY}"; then
   openssl ecparam -name secp384r1 -genkey | openssl ec -out "${KEY}"
-  chmod 0400 "${KEY}"
+  chmod 0444 "${KEY}"
 fi
 
 chvt 9
