@@ -130,7 +130,7 @@ fi
 
 if test "%(dh)s" = "y"; then
   if test ! -s "${DH}"; then
-    openssl dhparam -out "${DH}" 2048
+    openssl dhparam -dsaparam -out "${DH}" 2048
   fi
   ln --symbolic --force $(basename "${DH}") "${DH_LINK}"
 fi
