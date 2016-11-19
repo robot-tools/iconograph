@@ -28,6 +28,8 @@ def main():
     os.chmod(fh.fileno(), 0o755)
     fh.write("""\
 #!/bin/bash
+set -ex
+e2fsck -a /persistent
 mount -o data=journal,noatime,sync LABEL=PERSISTENT /persistent
 """)
 
