@@ -30,10 +30,14 @@ class GrubUpdater(object):
           files.append(filename)
 
         default_entry = None
+        fallback_entry = None
         current = lib.GetCurrentImage(self._image_dir)
         for i, filename in enumerate(sorted(files, reverse=True)):
           if filename == current:
             default_entry = i
+          elif fallback_entry is None:
+            fallback_entry = i
+
           fh.write("""
 menuentry "%(image_filename)s (%(volume_id)s)" --hotkey=%(hotkey)s {
   search --no-floppy --file --set=root %(image_path)s/%(image_filename)s
@@ -53,8 +57,10 @@ menuentry "%(image_filename)s (%(volume_id)s)" --hotkey=%(hotkey)s {
         fh.write("""
 set timeout=5
 set default=%(default_entry)d
+set fallback=%(fallback_entry)d
 """ % {
           'default_entry': default_entry,
+          'fallback_entry': fallback_entry,
         })
 
         fh.flush()
