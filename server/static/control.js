@@ -185,8 +185,13 @@ ImageController.prototype.onTick_ = function() {
   let now = Math.floor(Date.now() / 1000);
   for (let [type, type_value] of this.image_types_) {
     for (let [instance, instance_value] of type_value.instances) {
-      instance_value.last_report.innerText =
-          this.formatSeconds_(now - instance_value.last_report_timestamp);
+      let stale = now - instance_value.last_report_timestamp;
+      instance_value.last_report.innerText = this.formatSeconds_(stale);
+      if (stale < 15) {
+        instance_value.section.classList.remove('stale');
+      } else {
+        instance_value.section.classList.add('stale');
+      }
     }
   }
 };

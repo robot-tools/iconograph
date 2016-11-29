@@ -72,6 +72,10 @@ instance:hover {
   background-color: #ff9900 !important;
 }
 
+instance.stale {
+  background-color: rgba(255, 0, 0, 0.4) !important;
+}
+
 header {
   display: table-cell;
   text-align: center;
