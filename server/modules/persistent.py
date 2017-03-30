@@ -29,7 +29,7 @@ def main():
     fh.write("""\
 #!/bin/bash
 set -ex
-e2fsck -a /persistent
+e2fsck -y LABEL=PERSISTENT
 mount -o noatime LABEL=PERSISTENT /persistent
 """)
 

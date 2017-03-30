@@ -28,6 +28,7 @@ def main():
     os.fchmod(fh.fileno(), 0o755)
     fh.write("""\
 #!/bin/bash
+e2fsck -p LABEL=SYSTEMID
 mount -o data=journal,noatime,sync LABEL=SYSTEMID /systemid
 . /systemid/systemid
 echo ${SYSTEMID} > /etc/hostname

@@ -60,7 +60,7 @@ set default=%(default_entry)d
 set fallback=%(fallback_entry)d
 """ % {
           'default_entry': default_entry,
-          'fallback_entry': fallback_entry,
+          'fallback_entry': fallback_entry if fallback_entry else default_entry,
         })
 
         fh.flush()
