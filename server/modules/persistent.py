@@ -30,7 +30,7 @@ def main():
 #!/bin/bash
 set -ex
 e2fsck -a /persistent
-mount -o data=journal,noatime,sync LABEL=PERSISTENT /persistent
+mount -o noatime LABEL=PERSISTENT /persistent
 """)
 
   with module.ServiceFile('persistent.service') as fh:
