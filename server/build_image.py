@@ -98,7 +98,6 @@ class ImageBuilder(object):
 
   _DIVERSIONS = {
     '/sbin/initctl': '/bin/true',
-    '/etc/init.d/systemd-logind': '/bin/true',
   }
 
   _ISO_COPIES = {
