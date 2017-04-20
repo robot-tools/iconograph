@@ -265,6 +265,7 @@ class ImageBuilder(object):
         chroot_path,
         'apt-get',
         'clean')
+    shutil.rmtree(os.path.join(chroot_path, 'var', 'lib', 'apt', 'lists'))
 
   def _RemoveDiversions(self, chroot_path):
     for source in self._DIVERSIONS:
