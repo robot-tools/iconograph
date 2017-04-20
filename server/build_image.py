@@ -291,7 +291,9 @@ class ImageBuilder(object):
         'mksquashfs',
         chroot_path,
         os.path.join(union_path, 'casper', 'filesystem.squashfs'),
-        '-noappend')
+        '-noappend',
+        '-comp', 'xz',
+        '-b', '1048576')
 
   def _CopyISOFiles(self, union_path):
     for source, dest in self._ISO_COPIES.items():
