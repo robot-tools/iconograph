@@ -151,7 +151,7 @@ class ImageBuilder(object):
     os.mkdir(path)
     self._Exec(
         'debootstrap',
-        '--variant=buildd',
+        '--variant=minbase',
         '--arch', self._arch,
         self._release,
         path,
