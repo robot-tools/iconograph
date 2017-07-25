@@ -71,6 +71,9 @@ class IconModule(object):
     for user in users:
       self.ExecChroot('adduser', '--system', '--group', '--no-create-home', '--disabled-login', user)
 
+  def AddUserToGroup(self, user, group):
+    self.ExecChroot('usermod', '--append', '--groups', group, user)
+
   def AddKernelModules(self, *modules):
     with open(os.path.join(self._chroot_path, 'etc', 'modules'), 'a') as fh:
       for module in modules:
