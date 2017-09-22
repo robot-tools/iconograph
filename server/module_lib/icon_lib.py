@@ -67,7 +67,7 @@ class IconModule(object):
     self.InstallPackages('python-pip')
     self.ExecChroot('pip', 'install', *packages)
 
-  def AddDaemonUsers(self, user):
+  def AddDaemonUser(self, user):
     self.ExecChroot('adduser', '--system', '--group', '--no-create-home', '--disabled-login', user)
 
   def AddAdminUser(self, user):
