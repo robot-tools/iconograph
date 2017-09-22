@@ -26,6 +26,10 @@ parser.add_argument(
     dest='username',
     action='store',
     required=True)
+parser.add_argument(
+    '--groups',
+    dest='groups',
+    action='store')
 FLAGS = parser.parse_args()
 
 
@@ -37,6 +41,10 @@ def main():
   if FLAGS.sudo:
     with open(os.path.join(FLAGS.chroot_path, 'etc', 'sudoers.d', FLAGS.username), 'w') as fh:
       fh.write('%s\tALL=(ALL) NOPASSWD: ALL\n' % FLAGS.username)
+
+  if FLAGS.groups:
+    for group in FLAGS.groups.split(","):
+      module.ExecChroot('adduser', FLAGS.username, group)
 
   if FLAGS.authorized_keys_file:
     dest_dir = os.path.join(FLAGS.chroot_path, 'home', FLAGS.username, '.ssh')
