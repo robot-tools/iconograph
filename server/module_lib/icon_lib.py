@@ -67,12 +67,23 @@ class IconModule(object):
     self.InstallPackages('python-pip')
     self.ExecChroot('pip', 'install', *packages)
 
-  def AddSystemUsers(self, *users):
-    for user in users:
-      self.ExecChroot('adduser', '--system', '--group', '--no-create-home', '--disabled-login', user)
+  def AddDaemonUsers(self, user):
+    self.ExecChroot('adduser', '--system', '--group', '--no-create-home', '--disabled-login', user)
+
+  def AddAdminUser(self, user):
+    self.ExecChroot('adduser', '--system', '--group', '--disabled-password', '--shell=/bin/bash', user)
+    with open(os.path.join(self._chroot_path, 'etc', 'sudoers.d', FLAGS.username), 'w') as fh:
+      fh.write('%s\tALL=(ALL) NOPASSWD: ALL\n' % user)
 
   def AddUserToGroup(self, user, group):
     self.ExecChroot('usermod', '--append', '--groups', group, user)
+
+  def SetAuthorizedKeys(self, user, path):
+    dest_dir = os.path.join(self._chroot_path, 'home', user, '.ssh')
+    dest_path = os.path.join(dest_dir, 'authorized_keys')
+    os.mkdir(dest_dir)
+    shutil.copy(path, dest_path)
+    self.ExecChroot('chown', '%s:%s' % (user, user), os.path.join('home', user, '.ssh', 'authorized_keys'))
 
   def AddKernelModules(self, *modules):
     with open(os.path.join(self._chroot_path, 'etc', 'modules'), 'a') as fh:
