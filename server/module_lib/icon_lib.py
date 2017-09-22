@@ -72,7 +72,7 @@ class IconModule(object):
 
   def AddAdminUser(self, user):
     self.ExecChroot('adduser', '--system', '--group', '--disabled-password', '--shell=/bin/bash', user)
-    with open(os.path.join(self._chroot_path, 'etc', 'sudoers.d', FLAGS.username), 'w') as fh:
+    with open(os.path.join(self._chroot_path, 'etc', 'sudoers.d', user), 'w') as fh:
       fh.write('%s\tALL=(ALL) NOPASSWD: ALL\n' % user)
 
   def AddUserToGroup(self, user, group):
